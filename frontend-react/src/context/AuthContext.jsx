@@ -41,11 +41,19 @@ export function AuthProvider({ children }) {
           const res = await fetch("/auth/me", {
             headers: { "Authorization": `Bearer ${token}` }
           })
-          if (!res.ok) throw new Error("Failed to fetch user")
+          if (!res.ok) {
+            console.error("Failed to fetch user, status:", res.status)
+            throw new Error("Failed to fetch user")
+          }
+          const contentType = res.headers.get("content-type")
+          if (!contentType || !contentType.includes("application/json")) {
+            console.error("Expected JSON but got:", contentType)
+            throw new Error("Invalid response format")
+          }
           const me = await res.json()
           setUser(me)
         } catch (err) {
-          console.error(err)
+          console.error("Auth error:", err)
           setToken('')
           setUser(null)
         } finally {
