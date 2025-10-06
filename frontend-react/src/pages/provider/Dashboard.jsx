@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext.jsx'
 import { listMyCategories, createCategory, updateCategory, deleteCategory } from '../../api/categories.js'
 import { listMyBookings, acceptBooking, rejectBooking, updateBookingStatus } from '../../api/bookings.js'
 import NotificationsBell from '../../components/NotificationsBell.jsx'
+import RealTimeClock, { formatDateTime } from '../../components/RealTimeClock.jsx'
 
 export default function ProviderDashboard(){
   const { user, token } = useAuth()
@@ -88,24 +89,30 @@ export default function ProviderDashboard(){
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Provider Dashboard</h2>
-        <div className="flex gap-2">
-          <NotificationsBell />
-          <button onClick={()=>setTab('summary')} className={`btn ${tab==='summary'?'bg-bubble-dark text-white':'btn-white'}`}>Dashboard</button>
-          <button onClick={()=>setTab('categories')} className={`btn ${tab==='categories'?'bg-bubble-dark text-white':'btn-white'}`}>Manage Categories</button>
-          <button onClick={()=>setTab('bookings')} className={`btn ${tab==='bookings'?'bg-bubble-dark text-white':'btn-white'}`}>Manage Bookings</button>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold">Provider Dashboard</h2>
+          <RealTimeClock className="text-xs text-gray-600 mt-1" />
         </div>
+        <div className="flex items-center gap-2">
+          <NotificationsBell />
+        </div>
+      </div>
+      
+      <div className="flex gap-2 overflow-x-auto pb-2">
+        <button onClick={()=>setTab('summary')} className={`btn whitespace-nowrap ${tab==='summary'?'bg-bubble-dark text-white':'btn-white'}`}>📊 Dashboard</button>
+        <button onClick={()=>setTab('categories')} className={`btn whitespace-nowrap ${tab==='categories'?'bg-bubble-dark text-white':'btn-white'}`}>🏷️ Categories</button>
+        <button onClick={()=>setTab('bookings')} className={`btn whitespace-nowrap ${tab==='bookings'?'bg-bubble-dark text-white':'btn-white'}`}>📦 Bookings</button>
       </div>
 
       {error && <div className="text-sm text-red-600">{error}</div>}
 
       {tab === 'summary' && (
-        <div className="grid md:grid-cols-4 gap-4">
-          <StatCard title="Total" value={stats.total} emoji="📦" />
-          <StatCard title="Pending" value={stats.pending} emoji="⏳" />
-          <StatCard title="In Progress" value={stats.in_progress} emoji="🌀" />
-          <StatCard title="Completed" value={stats.completed} emoji="✅" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <StatCard title="Total" value={stats.total} emoji="📦" color="bg-gradient-to-br from-blue-100 to-blue-50" />
+          <StatCard title="Pending" value={stats.pending} emoji="⏳" color="bg-gradient-to-br from-yellow-100 to-yellow-50" />
+          <StatCard title="In Progress" value={stats.in_progress} emoji="🌀" color="bg-gradient-to-br from-purple-100 to-purple-50" />
+          <StatCard title="Completed" value={stats.completed} emoji="✅" color="bg-gradient-to-br from-green-100 to-green-50" />
         </div>
       )}
 
@@ -154,16 +161,41 @@ export default function ProviderDashboard(){
 
       {tab === 'bookings' && (
         <div className="grid gap-3">
+          {bookings.length === 0 && (
+            <div className="card text-center py-8">
+              <div className="text-4xl mb-2">📦</div>
+              <div className="text-gray-600">No bookings yet</div>
+            </div>
+          )}
           {bookings.map(b => (
-            <div key={b.id} className="card">
-              <div className="flex items-center justify-between">
-                <div className="font-semibold">{b.category_name}</div>
-                <div className="text-xs opacity-60">#{b.id.slice(0,8)}</div>
+            <div key={b.id} className="card hover:shadow-lg transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <div>
+                  <div className="font-semibold text-lg">{b.category_name}</div>
+                  <div className="text-xs text-gray-500">Booking #{b.id.slice(0,8)}</div>
+                </div>
+                <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(b.status)}`}>
+                  {getStatusLabel(b.status)}
+                </div>
               </div>
-              <div className="text-sm opacity-80">Weight: {b.weight_kg} kg • Total: ₱{b.total_price}</div>
-              <div className="text-xs opacity-60">{new Date(b.schedule_at).toLocaleString()}</div>
-              <div className="mt-3 flex items-center gap-2">
-                <label className="text-sm opacity-80">Status:</label>
+              
+              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                <div className="bg-gray-50 p-2 rounded">
+                  <div className="text-xs text-gray-500">Weight</div>
+                  <div className="font-semibold">{b.weight_kg} kg</div>
+                </div>
+                <div className="bg-gray-50 p-2 rounded">
+                  <div className="text-xs text-gray-500">Total</div>
+                  <div className="font-semibold text-bubble-dark">₱{b.total_price}</div>
+                </div>
+              </div>
+              
+              <div className="text-xs text-gray-600 mb-3">
+                📅 {formatDateTime(b.schedule_at)}
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Status:</label>
                 <select
                   value={b.status}
                   onChange={(e)=>{
@@ -172,13 +204,13 @@ export default function ProviderDashboard(){
                     if (st === 'in_progress' && b.status === 'pending') return onAccept(b.id)
                     onStatus(b.id, st)
                   }}
-                  className="input max-w-[220px]"
+                  className="input flex-1 text-sm"
                 >
-                  <option value="pending">Pending</option>
-                  <option value="in_progress">On Process</option>
-                  <option value="ready">Ready to Pickup</option>
-                  <option value="completed">Completed</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="pending">⏳ Pending</option>
+                  <option value="in_progress">🌀 In Progress</option>
+                  <option value="ready">✅ Ready to Pickup</option>
+                  <option value="completed">✔️ Completed</option>
+                  <option value="rejected">❌ Rejected</option>
                 </select>
               </div>
             </div>
@@ -189,14 +221,36 @@ export default function ProviderDashboard(){
   )
 }
 
-function StatCard({ title, value, emoji }){
+function StatCard({ title, value, emoji, color }){
   return (
-    <div className="bg-white/80 p-4 rounded-xl">
-      <div className="text-3xl">{emoji}</div>
-      <div className="text-sm opacity-70">{title}</div>
-      <div className="text-2xl font-bold">{value}</div>
+    <div className={`${color} p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow`}>
+      <div className="text-3xl mb-1">{emoji}</div>
+      <div className="text-xs text-gray-600 font-medium">{title}</div>
+      <div className="text-2xl md:text-3xl font-bold text-gray-800">{value}</div>
     </div>
   )
+}
+
+function getStatusColor(s){
+  switch(s){
+    case 'pending': return 'bg-yellow-100 text-yellow-800'
+    case 'in_progress': return 'bg-blue-100 text-blue-800'
+    case 'ready': return 'bg-purple-100 text-purple-800'
+    case 'completed': return 'bg-green-100 text-green-800'
+    case 'rejected': return 'bg-red-100 text-red-800'
+    default: return 'bg-gray-100 text-gray-800'
+  }
+}
+
+function getStatusLabel(s) {
+  switch(s){
+    case 'pending': return '⏳ Pending'
+    case 'in_progress': return '🌀 In Progress'
+    case 'ready': return '✅ Ready'
+    case 'completed': return '✔️ Completed'
+    case 'rejected': return '❌ Rejected'
+    default: return s
+  }
 }
 
 function summarize(items){

@@ -27,41 +27,53 @@ function Layout({ children }) {
   const { pathname } = useLocation()
   const isAuthPage = pathname === '/login' || pathname === '/register'
   const [mobileOpen, setMobileOpen] = useState(false)
+  
   return (
     <div className="min-h-screen bg-gradient-bubble relative font-rounded text-slate-800">
       <Bubbles />
-      <header className="flex items-center justify-between px-6 py-4">
-        {/* Disable brand navigation when logged in */}
-        {user ? (
-          <div className="flex items-center gap-2 text-xl font-semibold select-none cursor-default">
-            <span className="inline-flex h-8 w-8 rounded-full bg-white/70 items-center justify-center">🧺</span>
-            LaundryApp
-          </div>
-        ) : (
-          <Link to="/" className="flex items-center gap-2 text-xl font-semibold">
-            <span className="inline-flex h-8 w-8 rounded-full bg-white/70 items-center justify-center">🧺</span>
-            LaundryApp
-          </Link>
-        )}
-        {/* Mobile hamburger for sidebar */}
-        <div>
+      
+      {/* Header */}
+      <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-md border-b border-white/20 shadow-sm">
+        <div className="flex items-center justify-between px-4 md:px-6 py-3">
+          {/* Brand */}
+          {user ? (
+            <div className="flex items-center gap-2 text-lg md:text-xl font-semibold select-none cursor-default">
+              <span className="inline-flex h-8 w-8 rounded-full bg-gradient-to-br from-bubble-dark to-bubble-mid items-center justify-center shadow-sm">🧺</span>
+              <span className="hidden sm:inline">LaundryApp</span>
+            </div>
+          ) : (
+            <Link to="/" className="flex items-center gap-2 text-lg md:text-xl font-semibold hover:opacity-80 transition-opacity">
+              <span className="inline-flex h-8 w-8 rounded-full bg-gradient-to-br from-bubble-dark to-bubble-mid items-center justify-center shadow-sm">🧺</span>
+              <span className="hidden sm:inline">LaundryApp</span>
+            </Link>
+          )}
+          
+          {/* Mobile hamburger for sidebar */}
           {user && (
             <button
               onClick={()=>setMobileOpen(true)}
-              className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded bg-white/70"
+              className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-lg bg-white/80 hover:bg-white transition-colors shadow-sm"
               aria-label="Open menu"
             >
-              ☰
+              <span className="text-xl">☰</span>
             </button>
           )}
         </div>
       </header>
-      {/* Two-column layout when logged in: Sidebar + Main */}
-      <div className="relative z-10 max-w-6xl mx-auto px-4 py-4 flex gap-4">
-        {user && <Sidebar mobileOpen={mobileOpen} onClose={()=>setMobileOpen(false)} />}
-        <main className={`flex-1 ${user ? '' : ''}`}>{children}</main>
+      
+      {/* Main content area with sidebar */}
+      <div className="relative z-10">
+        <div className={`${user ? 'max-w-7xl mx-auto flex' : 'max-w-6xl mx-auto'}`}>
+          {user && <Sidebar mobileOpen={mobileOpen} onClose={()=>setMobileOpen(false)} />}
+          <main className={`flex-1 min-w-0 px-4 py-6 ${user ? 'md:px-6' : ''}`}>
+            {children}
+          </main>
+        </div>
       </div>
-      <footer className="px-6 py-6 text-xs text-center opacity-70">© {new Date().getFullYear()} LaundryApp</footer>
+      
+      <footer className="px-6 py-6 text-xs text-center opacity-70 mt-8">
+        © {new Date().getFullYear()} LaundryApp • Made with 💙
+      </footer>
     </div>
   )
 }

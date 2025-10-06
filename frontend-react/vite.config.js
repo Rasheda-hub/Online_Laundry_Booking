@@ -7,5 +7,43 @@ export default defineConfig({
   server: {
     port: 5173,
     open: true,
+    proxy: {
+      '/auth': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/users': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/services': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/orders': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/receipts': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/bookings': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/categories': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/notifications': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+      '/admin': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
   },
 })

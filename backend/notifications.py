@@ -11,7 +11,7 @@ def list_my_notifications(current_user: UserPublic = Depends(get_current_user)):
         result = session.run(
             """
             MATCH (n:Notification)-[:FOR_USER]->(u:User {id: $uid})
-            RETURN n { .id, .type, .message, .created_at, .read } AS n
+            RETURN n { .id, .type, .message, .created_at, .read, .receipt_id, .booking_id } AS n
             ORDER BY n.created_at DESC
             """,
             uid=current_user.id,

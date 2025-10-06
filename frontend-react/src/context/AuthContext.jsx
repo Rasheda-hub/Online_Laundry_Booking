@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-// Safe storage wrapper (avoids environments without localStorage)
 const storage = (() => {
   try {
     const ls = window.localStorage
@@ -22,6 +21,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => storage.getItem('token') || '')
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
 
   // Save token in storage whenever it changes
   useEffect(() => {
@@ -34,75 +34,151 @@ export function AuthProvider({ children }) {
 
   // Fetch current user when token exists
   useEffect(() => {
-    if (token) {
+    const fetchCurrentUser = async () => {
+      if (!token) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
+
       setLoading(true)
-      ;(async () => {
-        try {
-          const res = await fetch("/auth/me", {
-            headers: { "Authorization": `Bearer ${token}` }
-          })
-          if (!res.ok) {
-            console.error("Failed to fetch user, status:", res.status)
-            throw new Error("Failed to fetch user")
+      setError(null)
+      
+      try {
+        console.log('Fetching user with token:', token.substring(0, 20) + '...')
+        
+        const res = await fetch("/auth/me", {
+          headers: { 
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
           }
-          const contentType = res.headers.get("content-type")
-          if (!contentType || !contentType.includes("application/json")) {
-            console.error("Expected JSON but got:", contentType)
-            throw new Error("Invalid response format")
+        })
+        
+        console.log('Response status:', res.status)
+        console.log('Content-Type:', res.headers.get('content-type'))
+        
+        // Check if response is JSON
+        const contentType = res.headers.get("content-type")
+        if (!contentType || !contentType.includes("application/json")) {
+          const textResponse = await res.text()
+          console.error("Expected JSON but got:", contentType)
+          console.error("Response text:", textResponse.substring(0, 500))
+          
+          if (res.status === 401) {
+            throw new Error("Invalid or expired token")
+          } else if (res.status === 404) {
+            throw new Error("Authentication endpoint not found")
+          } else {
+            throw new Error(`Server error: ${res.status} ${res.statusText}`)
           }
-          const me = await res.json()
-          setUser(me)
-        } catch (err) {
-          console.error("Auth error:", err)
-          setToken('')
-          setUser(null)
-        } finally {
-          setLoading(false)
         }
-      })()
-    } else {
-      setUser(null)
-      setLoading(false)
+        
+        if (!res.ok) {
+          const errorData = await res.json()
+          throw new Error(errorData.detail || `Authentication failed: ${res.status}`)
+        }
+        
+        const userData = await res.json()
+        console.log('User data received:', userData)
+        setUser(userData)
+        
+      } catch (err) {
+        console.error("Auth error:", err)
+        setError(err.message)
+        // Only clear token if it's an authentication error
+        if (err.message.includes('token') || err.message.includes('401')) {
+          setToken('')
+        }
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchCurrentUser()
   }, [token])
 
   const register = async (data) => {
+    setError(null)
+    setLoading(true)
     try {
       const res = await fetch("/users/register/customer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       })
-      if (!res.ok) throw new Error("Registration failed")
+      
+      const contentType = res.headers.get("content-type")
+      if (!contentType || !contentType.includes("application/json")) {
+        const textResponse = await res.text()
+        throw new Error(`Server returned unexpected response: ${res.status}`)
+      }
+      
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.detail || "Registration failed")
+      }
+      
       const result = await res.json()
       return result
     } catch (err) {
-      console.error(err)
+      console.error("Registration error:", err)
+      setError(err.message)
       throw err
+    } finally {
+      setLoading(false)
     }
   }
 
   const login = async (data) => {
+    setError(null)
+    setLoading(true)
     try {
+      console.log('Attempting login with:', data.email)
+      
       const res = await fetch("/auth/login_json", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       })
-      if (!res.ok) throw new Error("Login failed")
+      
+      console.log('Login response status:', res.status)
+      const contentType = res.headers.get("content-type")
+      console.log('Login content-type:', contentType)
+      
+      if (!contentType || !contentType.includes("application/json")) {
+        const textResponse = await res.text()
+        console.error("Login HTML response:", textResponse.substring(0, 500))
+        throw new Error(`Server error: ${res.status} - Please check backend logs`)
+      }
+      
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData.detail || `Login failed: ${res.status}`)
+      }
+      
       const result = await res.json()
-      setToken(result.access_token)  // Backend returns 'access_token', not 'token'
+      console.log('Login successful, token received:', result.access_token ? 'Yes' : 'No')
+      
+      // Set the token - this will trigger the useEffect to fetch user data
+      setToken(result.access_token)
       return result
     } catch (err) {
-      console.error(err)
+      console.error("Login error:", err)
+      setError(err.message)
       throw err
+    } finally {
+      setLoading(false)
     }
   }
 
   const logout = () => {
     setToken('')
     setUser(null)
-    try { storage.removeItem('token') } catch {}
+    setError(null)
+    try { 
+      storage.removeItem('token') 
+    } catch {}
   }
 
   const value = useMemo(() => ({
@@ -112,10 +188,13 @@ export function AuthProvider({ children }) {
     setUser,
     loading,
     setLoading,
+    error,
+    setError,
     register,
     login,
-    logout
-  }), [token, user, loading])
+    logout,
+    isAuthenticated: !!token && !!user
+  }), [token, user, loading, error])
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>
 }

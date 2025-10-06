@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { registerCustomer, registerProvider } from '../api/users.js'
 
 export default function Register(){
@@ -50,35 +50,101 @@ export default function Register(){
   }
 
   return (
-    <div className="max-w-2xl mx-auto card">
-      <h2 className="text-xl font-semibold mb-4 text-center">Create Account</h2>
-      <div className="flex justify-center gap-3 mb-4">
-        <button onClick={()=>setTab('customer')} className={`btn ${tab==='customer'?'bg-bubble-dark text-white':'btn-white'}`}>Customer</button>
-        <button onClick={()=>setTab('provider')} className={`btn ${tab==='provider'?'bg-bubble-dark text-white':'btn-white'}`}>Service Provider</button>
-      </div>
-      {error && <div className="mb-3 text-sm text-red-600 text-center">{error}</div>}
-      <form onSubmit={onSubmit} className="grid md:grid-cols-2 gap-3">
-        {tab==='customer' ? (
-          <>
-            <input value={cFullName} onChange={e=>setCFullName(e.target.value)} placeholder="Full name" className="input" required />
-            <input type="email" value={cEmail} onChange={e=>setCEmail(e.target.value)} placeholder="Email" className="input" required />
-            <input type="password" value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder="Password" className="input" required />
-            <input value={cContact} onChange={e=>setCContact(e.target.value)} placeholder="Contact number" className="input" required />
-            <input value={cAddress} onChange={e=>setCAddress(e.target.value)} placeholder="Address" className="input md:col-span-2" required />
-          </>
-        ) : (
-          <>
-            <input value={pShopName} onChange={e=>setPShopName(e.target.value)} placeholder="Shop name" className="input" required />
-            <input type="email" value={pEmail} onChange={e=>setPEmail(e.target.value)} placeholder="Email" className="input" required />
-            <input type="password" value={pPassword} onChange={e=>setPPassword(e.target.value)} placeholder="Password" className="input" required />
-            <input value={pContact} onChange={e=>setPContact(e.target.value)} placeholder="Contact number" className="input" required />
-            <input value={pShopAddress} onChange={e=>setPShopAddress(e.target.value)} placeholder="Shop address" className="input md:col-span-2" required />
-          </>
+    <div className="max-w-2xl mx-auto">
+      <div className="card">
+        <div className="text-center mb-6">
+          <div className="inline-flex h-16 w-16 rounded-full bg-gradient-to-br from-bubble-dark to-bubble-mid items-center justify-center text-4xl shadow-lg mb-3">
+            ✨
+          </div>
+          <h2 className="text-2xl md:text-3xl font-bold">Create Account</h2>
+          <p className="text-sm text-gray-600 mt-1">Join us today!</p>
+        </div>
+        
+        <div className="flex justify-center gap-2 mb-6">
+          <button 
+            type="button"
+            onClick={()=>setTab('customer')} 
+            className={`btn ${tab==='customer'?'btn-primary':'btn-white'}`}
+          >
+            👤 Customer
+          </button>
+          <button 
+            type="button"
+            onClick={()=>setTab('provider')} 
+            className={`btn ${tab==='provider'?'btn-primary':'btn-white'}`}
+          >
+            🏪 Provider
+          </button>
+        </div>
+        
+        {error && (
+          <div className="mb-4 bg-red-50 text-red-700 text-sm p-3 rounded-lg text-center">
+            ⚠️ {error}
+          </div>
         )}
-        <button disabled={loading} className="mt-2 md:col-span-2 btn-primary">{loading ? 'Creating...' : 'Sign Up'}</button>
-      </form>
-      <div className="mt-4 text-sm text-center">
-        Already have an account? <a href="#" onClick={(e)=>{e.preventDefault(); nav('/login')}} className="underline">Login</a>
+        
+        <form onSubmit={onSubmit} className="space-y-4">
+          {tab==='customer' ? (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">👤 Full Name *</label>
+                <input value={cFullName} onChange={e=>setCFullName(e.target.value)} placeholder="Juan Dela Cruz" className="input" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">📧 Email *</label>
+                <input type="email" value={cEmail} onChange={e=>setCEmail(e.target.value)} placeholder="your@email.com" className="input" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">🔒 Password *</label>
+                <input type="password" value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder="Create a password" className="input" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">📞 Contact Number *</label>
+                <input value={cContact} onChange={e=>setCContact(e.target.value)} placeholder="09XX XXX XXXX" className="input" required />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2">📍 Address *</label>
+                <input value={cAddress} onChange={e=>setCAddress(e.target.value)} placeholder="Complete address" className="input" required />
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-2">🏪 Shop Name *</label>
+                <input value={pShopName} onChange={e=>setPShopName(e.target.value)} placeholder="Your Shop Name" className="input" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">📧 Email *</label>
+                <input type="email" value={pEmail} onChange={e=>setPEmail(e.target.value)} placeholder="shop@email.com" className="input" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">🔒 Password *</label>
+                <input type="password" value={pPassword} onChange={e=>setPPassword(e.target.value)} placeholder="Create a password" className="input" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">📞 Contact Number *</label>
+                <input value={pContact} onChange={e=>setPContact(e.target.value)} placeholder="09XX XXX XXXX" className="input" required />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2">📍 Shop Address *</label>
+                <input value={pShopAddress} onChange={e=>setPShopAddress(e.target.value)} placeholder="Complete shop address" className="input" required />
+              </div>
+            </>
+          )}
+          
+          <button disabled={loading} className="btn-primary w-full">
+            {loading ? '⏳ Creating...' : '✨ Sign Up'}
+          </button>
+        </form>
+        
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link to="/login" className="text-bubble-dark font-semibold hover:underline">
+              Login here
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

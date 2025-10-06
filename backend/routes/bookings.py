@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException
 from models import (
     BookingCreate,
@@ -14,6 +15,13 @@ from auth import get_current_user
 from neo4j.exceptions import ServiceUnavailable
 from db import get_session
 import uuid
+
+# Philippine timezone
+PH_TZ = ZoneInfo('Asia/Manila')
+
+def get_ph_now():
+    """Get current time in Philippine timezone"""
+    return datetime.now(PH_TZ)
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -96,7 +104,7 @@ def create_booking(payload: BookingCreate, current_user: UserPublic = Depends(ge
             total = price
 
         bid = str(uuid.uuid4())
-        now = datetime.utcnow().isoformat()
+        now = get_ph_now().isoformat()
         # schedule_at is set by server to now (real-time), ignoring client-provided values
         schedule_at = now
         session.run(
@@ -122,6 +130,56 @@ def create_booking(payload: BookingCreate, current_user: UserPublic = Depends(ge
             w=weight,
             total=total,
         )
+        
+        # Auto-generate Order and Receipt when booking is created
+        order_id = str(uuid.uuid4())
+        receipt_id = str(uuid.uuid4())
+        session.run(
+            """
+            MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
+            MATCH (b)-[:FOR_PROVIDER]->(p:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            WITH b, c, p, cat
+            CREATE (o:Order {
+              id: $oid, status: 'pending', delivery_option: 'pickup', notes: coalesce(b.notes, ''),
+              total_cost: b.total_price, created_at: $now
+            })-[:PLACED_BY]->(c)
+            WITH o, p, b, c, cat
+            CREATE (o)-[:FOR_PROVIDER]->(p)
+            CREATE (o)-[:FROM_BOOKING]->(b)
+            CREATE (r:Receipt {
+              id: $rid, subtotal: b.total_price, delivery_fee: 0.0, total: b.total_price, created_at: $now
+            })-[:FOR_ORDER]->(o)
+            WITH r, o, p, b, c, cat
+            CREATE (r)-[:FOR_CUSTOMER]->(c)
+            CREATE (r)-[:FOR_PROVIDER]->(p)
+            WITH r, b, c, p, cat
+            // Notifications for both customer and provider
+            CREATE (nc:Notification {
+              id: randomUUID(), 
+              type: 'booking_created', 
+              message: 'Your booking for ' + cat.name + ' has been submitted. Receipt generated.', 
+              created_at: $now, 
+              read: false, 
+              receipt_id: $rid,
+              booking_id: $bid
+            })-[:FOR_USER]->(c)
+            CREATE (np:Notification {
+              id: randomUUID(), 
+              type: 'new_booking', 
+              message: 'New booking received for ' + cat.name + ' from ' + c.full_name, 
+              created_at: $now, 
+              read: false, 
+              receipt_id: $rid,
+              booking_id: $bid
+            })-[:FOR_USER]->(p)
+            """,
+            bid=bid,
+            oid=order_id,
+            rid=receipt_id,
+            now=now,
+        )
+        
         data = _booking_to_public(session, bid)
     return data  # type: ignore
 
@@ -203,40 +261,44 @@ def update_status(booking_id: str, payload: BookingUpdateStatus, current_user: U
         ).single()
         if not rec:
             raise HTTPException(status_code=404, detail="Booking not found or not for this provider")
-        # If completed, generate an Order and a Receipt so it shows up in /receipts/mine
+        
+        # Send notification to customer about status update
+        now = get_ph_now().isoformat()
+        status_messages = {
+            'in_progress': 'Your laundry is now being processed',
+            'ready': 'Your laundry is ready for pickup!',
+            'completed': 'Your order has been completed. Thank you!',
+            'rejected': 'Your booking has been rejected'
+        }
+        message = status_messages.get(payload.status.value, f'Your booking status updated to {payload.status.value}')
+        
+        session.run(
+            """
+            MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            CREATE (n:Notification {
+              id: randomUUID(),
+              type: 'status_update',
+              message: $message + ' - ' + cat.name,
+              created_at: $now,
+              read: false,
+              booking_id: $bid
+            })-[:FOR_USER]->(c)
+            """,
+            bid=booking_id,
+            message=message,
+            now=now,
+        )
+        
+        # If completed, update the existing Order status (created during booking)
         if payload.status.value == BookingStatus.completed.value:
-            now = datetime.utcnow().isoformat()
-            order_id = str(uuid.uuid4())
-            receipt_id = str(uuid.uuid4())
-            # Create minimal Order from Booking and associated Receipt (skip items; totals come from booking)
+            now = get_ph_now().isoformat()
+            # Update existing order status to completed
             session.run(
                 """
-                MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
-                MATCH (b)-[:FOR_PROVIDER]->(p:User)
-                WITH b, c, p
-                CREATE (o:Order {
-                  id: $oid, status: 'completed', delivery_option: 'dropoff', notes: coalesce(b.notes, ''),
-                  total_cost: b.total_price, created_at: $now
-                })-[:PLACED_BY]->(c)
-                WITH o, p, b
-                CREATE (o)-[:FOR_PROVIDER]->(p)
-                WITH o, p, b
-                CREATE (o)-[:FROM_BOOKING]->(b)
-                CREATE (r:Receipt {
-                  id: $rid, subtotal: b.total_price, delivery_fee: 0.0, total: b.total_price, created_at: $now
-                })-[:FOR_ORDER]->(o)
-                WITH r, o, p, b
-                MATCH (b)-[:BY_CUSTOMER]->(c)
-                CREATE (r)-[:FOR_CUSTOMER]->(c)
-                CREATE (r)-[:FOR_PROVIDER]->(p)
-                WITH r, b, c, p
-                // simple in-app notifications for both customer and provider
-                CREATE (nc:Notification {id: randomUUID(), type: 'receipt_created', message: 'Your receipt is ready', created_at: $now, read: false, receipt_id: $rid})-[:FOR_USER]->(c)
-                CREATE (np:Notification {id: randomUUID(), type: 'receipt_created', message: 'A customer receipt is available', created_at: $now, read: false, receipt_id: $rid})-[:FOR_USER]->(p)
+                MATCH (b:Booking {id: $bid})<-[:FROM_BOOKING]-(o:Order)
+                SET o.status = 'completed'
                 """,
                 bid=booking_id,
-                oid=order_id,
-                rid=receipt_id,
-                now=now,
             )
         return BookingPublic(**_booking_to_public(session, booking_id))

@@ -1,10 +1,18 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException
 from neo4j.exceptions import ServiceUnavailable
 from models import ReceiptPublic, UserPublic, UserRole
 from auth import get_current_user
 from db import get_session
 import uuid
+
+# Philippine timezone
+PH_TZ = ZoneInfo('Asia/Manila')
+
+def get_ph_now():
+    """Get current time in Philippine timezone"""
+    return datetime.now(PH_TZ)
 
 router = APIRouter(prefix="/receipts", tags=["receipts"])
 
@@ -62,7 +70,7 @@ def _generate_for_order(session, order_id: str):
             subtotal=subtotal,
             delivery_fee=delivery_fee,
             total=total,
-            created_at=datetime.utcnow().isoformat(),
+            created_at=get_ph_now().isoformat(),
         )
     return {
         "id": rid,

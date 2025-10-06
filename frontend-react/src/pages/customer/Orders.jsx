@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { listMyBookings } from '../../api/bookings.js'
+import { formatDateTime } from '../../components/RealTimeClock.jsx'
 
 export default function Orders(){
   const { token } = useAuth()
+  const nav = useNavigate()
   const [orders, setOrders] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -21,17 +24,60 @@ export default function Orders(){
   if (error) return <div className="text-sm text-red-600">{error}</div>
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-2xl font-semibold">My Orders</h2>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl md:text-3xl font-bold">My Orders</h2>
+        <button onClick={() => nav('/receipts')} className="btn-white text-sm">
+          🧾 View Receipts
+        </button>
+      </div>
+      
+      {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</div>}
+      
+      {orders.length === 0 && (
+        <div className="card text-center py-8">
+          <div className="text-4xl mb-2">📦</div>
+          <div className="text-gray-600">No orders yet</div>
+          <button onClick={() => nav('/customer')} className="btn-primary mt-4">Book Now</button>
+        </div>
+      )}
+      
       <div className="grid gap-3">
         {orders.map(o => (
-          <div key={o.id} className="card">
-            <div className="flex items-center justify-between">
-              <div className="font-semibold">{o.category_name}</div>
-              <div className={`px-2 py-1 rounded text-xs ${statusColor(o.status)}`}>{o.status}</div>
+          <div key={o.id} className="card hover:shadow-lg transition-shadow">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <div className="font-semibold text-lg">{o.category_name}</div>
+                <div className="text-xs text-gray-500">Order #{o.id.slice(0,8)}</div>
+              </div>
+              <div className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(o.status)}`}>
+                {formatStatus(o.status)}
+              </div>
             </div>
-            <div className="text-sm opacity-80">Weight: {o.weight_kg} kg • Total: ₱{o.total_price}</div>
-            <div className="text-xs opacity-60">#{o.id.slice(0,8)} • {new Date(o.schedule_at).toLocaleString()}</div>
+            
+            <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+              <div className="bg-gray-50 p-2 rounded">
+                <div className="text-xs text-gray-500">Weight</div>
+                <div className="font-semibold">{o.weight_kg} kg</div>
+              </div>
+              <div className="bg-gray-50 p-2 rounded">
+                <div className="text-xs text-gray-500">Total</div>
+                <div className="font-semibold text-bubble-dark">₱{o.total_price}</div>
+              </div>
+            </div>
+            
+            <div className="text-xs text-gray-600 mb-3">
+              📅 {formatDateTime(o.schedule_at)}
+            </div>
+            
+            {o.status === 'completed' && (
+              <button 
+                onClick={() => nav('/receipts')}
+                className="btn-primary w-full text-sm"
+              >
+                🧾 View Receipt
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -41,11 +87,22 @@ export default function Orders(){
 
 function statusColor(s){
   switch(s){
-    case 'pending': return 'bg-yellow-100'
-    case 'in_progress': return 'bg-blue-100'
-    case 'ready': return 'bg-purple-100'
-    case 'completed': return 'bg-green-100'
-    case 'rejected': return 'bg-red-100'
-    default: return 'bg-gray-100'
+    case 'pending': return 'bg-yellow-100 text-yellow-800'
+    case 'in_progress': return 'bg-blue-100 text-blue-800'
+    case 'ready': return 'bg-purple-100 text-purple-800'
+    case 'completed': return 'bg-green-100 text-green-800'
+    case 'rejected': return 'bg-red-100 text-red-800'
+    default: return 'bg-gray-100 text-gray-800'
+  }
+}
+
+function formatStatus(s) {
+  switch(s){
+    case 'pending': return '⏳ Pending'
+    case 'in_progress': return '🌀 In Progress'
+    case 'ready': return '✅ Ready'
+    case 'completed': return '✔️ Completed'
+    case 'rejected': return '❌ Rejected'
+    default: return s
   }
 }

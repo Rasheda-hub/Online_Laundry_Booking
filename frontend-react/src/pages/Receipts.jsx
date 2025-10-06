@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { listMyReceipts } from '../api/receipts.js'
+import { formatDateTime } from '../components/RealTimeClock.jsx'
 
 export default function Receipts(){
   const { token, user } = useAuth()
@@ -33,46 +34,79 @@ export default function Receipts(){
   if (error) return <div className="text-sm text-red-600">{error}</div>
 
   return (
-    <div className="space-y-3">
-      <h2 className="text-2xl font-semibold">Receipts</h2>
-      {receipts.length === 0 && <div className="text-sm opacity-70">No receipts yet.</div>}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl md:text-3xl font-bold">Receipts</h2>
+        <div className="text-xs text-gray-600">{receipts.length} receipt{receipts.length !== 1 ? 's' : ''}</div>
+      </div>
+      
+      {receipts.length === 0 && (
+        <div className="card text-center py-8">
+          <div className="text-4xl mb-2">🧾</div>
+          <div className="text-gray-600">No receipts yet</div>
+          <p className="text-sm text-gray-500 mt-2">Receipts will appear here when orders are completed</p>
+        </div>
+      )}
+      
       <div className="grid gap-3">
         {receipts.map(r => (
-          <div key={r.id} className="card">
-            <div className="flex items-center justify-between">
-              <div className="font-semibold">Receipt #{r.id.slice(0,8)}</div>
-              <div className="text-xs opacity-60">{new Date(r.created_at).toLocaleString()}</div>
+          <div key={r.id} className="card hover:shadow-lg transition-shadow">
+            <div className="flex items-start justify-between mb-3">
+              <div>
+                <div className="font-semibold text-lg">🧾 Receipt #{r.id.slice(0,8)}</div>
+                <div className="text-xs text-gray-500">📅 {formatDateTime(r.created_at)}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-lg font-bold text-bubble-dark">₱{Number(r.total).toFixed(2)}</div>
+                <div className="text-xs text-gray-500">Total</div>
+              </div>
             </div>
-            <div className="mt-1 text-sm">
-              <span className="opacity-70">Order:</span> <span>#{r.order_id?.slice(0,8)}</span>
+            
+            <div className="text-sm mb-3">
+              <span className="text-gray-600">Order:</span> <span className="font-medium">#{r.order_id?.slice(0,8)}</span>
             </div>
+            
             {user?.role !== 'customer' && (
-              <div className="mt-1 text-sm">
-                <span className="opacity-70">Customer:</span> <span>{r.customer_name || r.customer_id}</span>
-                {r.customer_contact && <span className="ml-2">• {r.customer_contact}</span>}
-                {r.customer_address && <div className="text-xs opacity-70">{r.customer_address}</div>}
+              <div className="bg-blue-50 rounded-lg p-3 mb-3 text-sm">
+                <div className="font-medium text-blue-900 mb-1">👤 Customer</div>
+                <div className="text-blue-800">{r.customer_name || r.customer_id}</div>
+                {r.customer_contact && <div className="text-blue-700 text-xs">📞 {r.customer_contact}</div>}
+                {r.customer_address && <div className="text-blue-700 text-xs">📍 {r.customer_address}</div>}
               </div>
             )}
-            <div className="mt-2 grid md:grid-cols-2 gap-2 text-sm">
-              <div className="bg-white rounded p-2">
-                <div className="font-medium mb-1">Items</div>
-                {(r.items || []).length === 0 && <div className="opacity-60 text-xs">No items recorded</div>}
+            
+            <div className="grid md:grid-cols-2 gap-3 text-sm mb-3">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="font-medium mb-2 text-gray-700">📦 Items</div>
+                {(r.items || []).length === 0 && <div className="text-gray-500 text-xs">No items recorded</div>}
                 {(r.items || []).map((it, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs">
-                    <div>{it.service_name || `Service ${it.service_id?.slice(0,8) || '-'}`}</div>
-                    <div>{it.weight_kg ? `${it.weight_kg} kg` : ''}</div>
+                  <div key={idx} className="flex items-center justify-between text-xs mb-1">
+                    <div className="text-gray-700">{it.service_name || `Service ${it.service_id?.slice(0,8) || '-'}`}</div>
+                    <div className="font-medium">{it.weight_kg ? `${it.weight_kg} kg` : ''}</div>
                   </div>
                 ))}
               </div>
-              <div className="bg-white rounded p-2">
-                <div className="font-medium mb-1">Totals</div>
-                <div className="flex items-center justify-between text-sm"><span className="opacity-70">Subtotal</span><span>₱{Number(r.subtotal).toFixed(2)}</span></div>
-                <div className="flex items-center justify-between text-sm"><span className="opacity-70">Delivery Fee</span><span>₱{Number(r.delivery_fee).toFixed(2)}</span></div>
-                <div className="flex items-center justify-between text-base font-semibold mt-1"><span>Total</span><span>₱{Number(r.total).toFixed(2)}</span></div>
+              <div className="bg-gray-50 rounded-lg p-3">
+                <div className="font-medium mb-2 text-gray-700">💰 Summary</div>
+                <div className="flex items-center justify-between text-xs mb-1">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="font-medium">₱{Number(r.subtotal).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className="text-gray-600">Delivery Fee</span>
+                  <span className="font-medium">₱{Number(r.delivery_fee).toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between font-semibold text-bubble-dark pt-2 border-t">
+                  <span>Total</span>
+                  <span>₱{Number(r.total).toFixed(2)}</span>
+                </div>
               </div>
             </div>
-            <div className="mt-3 flex justify-end">
-              <button onClick={()=>{ setCurrent(r); setOpen(true) }} className="btn-white">View / Print</button>
+            
+            <div className="flex justify-end">
+              <button onClick={()=>{ setCurrent(r); setOpen(true) }} className="btn-primary text-sm">
+                🖎️ View / Print
+              </button>
             </div>
           </div>
         ))}
@@ -107,7 +141,7 @@ function ReceiptModal({ user, receipt, onClose }){
               )}
             </div>
           </div>
-          <div className="text-xs opacity-70">{new Date(receipt.created_at).toLocaleString()}</div>
+          <div className="text-xs opacity-70">{formatDateTime(receipt.created_at)}</div>
         </div>
 
         {/* Body */}

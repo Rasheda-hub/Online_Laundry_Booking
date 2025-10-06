@@ -72,93 +72,119 @@ export default function Profile(){
   if (!user) return null
 
   return (
-    <div className="max-w-xl mx-auto card">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xl font-semibold">My Profile</h2>
-        <button onClick={()=>setEditMode(e=>!e)} className="btn-white">{editMode ? 'Cancel' : 'Edit Profile'}</button>
+    <div className="max-w-2xl mx-auto space-y-4">
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-2xl md:text-3xl font-bold">👤 My Profile</h2>
+            <div className="text-xs text-gray-600 mt-1 capitalize">🎯 Role: {user.role}</div>
+          </div>
+          <button onClick={()=>setEditMode(e=>!e)} className="btn-white text-sm">
+            {editMode ? '❌ Cancel' : '✏️ Edit'}
+          </button>
+        </div>
+        {error && <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg mb-3">⚠️ {error}</div>}
+        {ok && <div className="bg-green-50 text-green-700 text-sm p-3 rounded-lg mb-3">✅ {ok}</div>}
+
+        {!editMode && (
+          <div className="space-y-3">
+            {user.role === 'provider' ? (
+              <>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-xs text-gray-600 mb-1">🏪 Shop Name</div>
+                  <div className="font-medium">{user.shop_name || '-'}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-xs text-gray-600 mb-1">📞 Contact Number</div>
+                  <div className="font-medium">{user.contact_number || '-'}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-xs text-gray-600 mb-1">📍 Shop Address</div>
+                  <div className="font-medium">{user.shop_address || '-'}</div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-xs text-gray-600 mb-1">👤 Full Name</div>
+                  <div className="font-medium">{user.full_name || '-'}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-xs text-gray-600 mb-1">📞 Contact Number</div>
+                  <div className="font-medium">{user.contact_number || '-'}</div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="text-xs text-gray-600 mb-1">📍 Address</div>
+                  <div className="font-medium">{user.address || '-'}</div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {editMode && (
+          <form onSubmit={onSave} className="space-y-4">
+            {user.role === 'provider' ? (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">🏪 Shop Name *</label>
+                  <input value={form.shop_name} onChange={e=>setForm({...form, shop_name:e.target.value})} className="input" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">📞 Contact Number *</label>
+                  <input value={form.contact_number} onChange={e=>setForm({...form, contact_number:e.target.value})} className="input" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">📍 Shop Address *</label>
+                  <input value={form.shop_address} onChange={e=>setForm({...form, shop_address:e.target.value})} className="input" required />
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">👤 Full Name *</label>
+                  <input value={form.full_name} onChange={e=>setForm({...form, full_name:e.target.value})} className="input" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">📞 Contact Number *</label>
+                  <input value={form.contact_number} onChange={e=>setForm({...form, contact_number:e.target.value})} className="input" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">📍 Address *</label>
+                  <input value={form.address} onChange={e=>setForm({...form, address:e.target.value})} className="input" required />
+                </div>
+              </>
+            )}
+            <div className="flex gap-2">
+              <button disabled={saving} className="btn-primary flex-1">{saving ? '⏳ Saving...' : '✅ Save Changes'}</button>
+              <button type="button" onClick={()=>setEditMode(false)} className="btn-white flex-1">❌ Cancel</button>
+            </div>
+          </form>
+        )}
       </div>
-      <div className="text-xs opacity-60 mb-2">Role: {user.role}</div>
-      {error && <div className="text-sm text-red-600 mb-2">{error}</div>}
-      {ok && <div className="text-sm text-green-700 mb-2">{ok}</div>}
-
-      {!editMode && (
-        <div className="space-y-2 text-sm">
-          {user.role === 'provider' ? (
-            <>
-              <div><span className="opacity-70">Shop Name:</span> {user.shop_name || '-'}</div>
-              <div><span className="opacity-70">Contact:</span> {user.contact_number || '-'}</div>
-              <div><span className="opacity-70">Shop Address:</span> {user.shop_address || '-'}</div>
-            </>
-          ) : (
-            <>
-              <div><span className="opacity-70">Full Name:</span> {user.full_name || '-'}</div>
-              <div><span className="opacity-70">Contact:</span> {user.contact_number || '-'}</div>
-              <div><span className="opacity-70">Address:</span> {user.address || '-'}</div>
-            </>
-          )}
-        </div>
-      )}
-
-      {editMode && (
-        <form onSubmit={onSave} className="space-y-3">
-          {user.role === 'provider' ? (
-            <>
-              <div>
-                <label className="text-sm">Shop Name</label>
-                <input value={form.shop_name} onChange={e=>setForm({...form, shop_name:e.target.value})} className="input" required />
-              </div>
-              <div>
-                <label className="text-sm">Contact Number</label>
-                <input value={form.contact_number} onChange={e=>setForm({...form, contact_number:e.target.value})} className="input" required />
-              </div>
-              <div>
-                <label className="text-sm">Shop Address</label>
-                <input value={form.shop_address} onChange={e=>setForm({...form, shop_address:e.target.value})} className="input" required />
-              </div>
-            </>
-          ) : (
-            <>
-              <div>
-                <label className="text-sm">Full Name</label>
-                <input value={form.full_name} onChange={e=>setForm({...form, full_name:e.target.value})} className="input" required />
-              </div>
-              <div>
-                <label className="text-sm">Contact Number</label>
-                <input value={form.contact_number} onChange={e=>setForm({...form, contact_number:e.target.value})} className="input" required />
-              </div>
-              <div>
-                <label className="text-sm">Address</label>
-                <input value={form.address} onChange={e=>setForm({...form, address:e.target.value})} className="input" required />
-              </div>
-            </>
-          )}
-          <div className="flex gap-2">
-            <button disabled={saving} className="btn-primary">{saving ? 'Saving...' : 'Save Changes'}</button>
-            <button type="button" onClick={()=>setEditMode(false)} className="btn-white">Done</button>
+      
+      <div className="card">
+        <h3 className="text-xl font-bold mb-4">🔐 Change Password</h3>
+        {pwdErr && <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg mb-3">⚠️ {pwdErr}</div>}
+        {pwdMsg && <div className="bg-green-50 text-green-700 text-sm p-3 rounded-lg mb-3">✅ {pwdMsg}</div>}
+        <form onSubmit={onChangePassword} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">Current Password *</label>
+            <input type="password" value={pwdForm.current_password} onChange={e=>setPwdForm({...pwdForm, current_password:e.target.value})} className="input" required />
           </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-2">New Password *</label>
+              <input type="password" value={pwdForm.new_password} onChange={e=>setPwdForm({...pwdForm, new_password:e.target.value})} className="input" required />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-2">Confirm Password *</label>
+              <input type="password" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm, confirm:e.target.value})} className="input" required />
+            </div>
+          </div>
+          <button className="btn-primary w-full md:w-auto">🔄 Update Password</button>
         </form>
-      )}
-      <hr className="my-5 border-t" />
-      <h3 className="font-semibold mb-2">Change Password</h3>
-      {pwdErr && <div className="text-sm text-red-600 mb-2">{pwdErr}</div>}
-      {pwdMsg && <div className="text-sm text-green-700 mb-2">{pwdMsg}</div>}
-      <form onSubmit={onChangePassword} className="space-y-3">
-        <div>
-          <label className="text-sm">Current Password</label>
-          <input type="password" value={pwdForm.current_password} onChange={e=>setPwdForm({...pwdForm, current_password:e.target.value})} className="input" required />
-        </div>
-        <div className="grid md:grid-cols-2 gap-3">
-          <div>
-            <label className="text-sm">New Password</label>
-            <input type="password" value={pwdForm.new_password} onChange={e=>setPwdForm({...pwdForm, new_password:e.target.value})} className="input" required />
-          </div>
-          <div>
-            <label className="text-sm">Confirm Password</label>
-            <input type="password" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm, confirm:e.target.value})} className="input" required />
-          </div>
-        </div>
-        <button className="btn-white">Update Password</button>
-      </form>
+      </div>
     </div>
   )
 }
