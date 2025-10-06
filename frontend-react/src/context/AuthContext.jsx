@@ -76,14 +76,14 @@ export function AuthProvider({ children }) {
 
   const login = async (data) => {
     try {
-      const res = await fetch("/users/login", {
+      const res = await fetch("/auth/login_json", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       })
       if (!res.ok) throw new Error("Login failed")
       const result = await res.json()
-      setToken(result.token)
+      setToken(result.access_token)  // Backend returns 'access_token', not 'token'
       return result
     } catch (err) {
       console.error(err)
