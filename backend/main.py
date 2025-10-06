@@ -1,4 +1,6 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from config import settings
 from db import close_driver, get_driver
@@ -16,16 +18,16 @@ from dotenv import load_dotenv
 load_dotenv()
 app = FastAPI(title=settings.app_name)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://127.0.0.1:5173",
-        "http://localhost:5173",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# CORS: Only needed if frontend is on a different domain
+# Since React is served from /static, same-origin requests don't need CORS
+# Uncomment below only if you deploy frontend separately
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["https://your-frontend-domain.com"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 app.include_router(auth_router)
 app.include_router(users_router)
@@ -36,6 +38,8 @@ app.include_router(bookings_router)
 app.include_router(admin_router)
 app.include_router(categories_router)
 app.include_router(notifications_router)
+# Serve static files (React build)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
 def startup_event():
@@ -46,9 +50,10 @@ def startup_event():
         # Re-raise so the app fails fast with a clear log
         raise
 
+# Serve the main React page
 @app.get("/")
-def root():
-    return {"message": "LaundryApp API is running"}
+async def root():
+    return FileResponse("static/index.html")
 
 @app.on_event("shutdown")
 def shutdown_event():

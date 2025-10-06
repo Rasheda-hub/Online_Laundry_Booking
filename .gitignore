@@ -7,6 +7,9 @@ __pycache__/
 frontend-react/node_modules/
 frontend-react/dist/
 
+# Backend static files (React build output)
+backend/static/
+
 # Env files (keep secrets out of git)
 backend/.env
 frontend-react/.env

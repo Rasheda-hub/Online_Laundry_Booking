@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://127.0.0.1:8000'
+const RAW_API_BASE = (import.meta.env.VITE_API_BASE ?? '').trim()
+const API_BASE = RAW_API_BASE.replace(/\/+$/, '')
 
 export function getAuthHeaders(token) {
   return token ? { Authorization: `Bearer ${token}` } : {}

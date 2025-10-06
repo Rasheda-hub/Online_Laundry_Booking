@@ -96,7 +96,7 @@ function Home(){
     <div className="grid md:grid-cols-2 gap-6 items-center">
       <div className="space-y-4">
         <h1 className="text-3xl md:text-5xl font-bold">Online Laundry Booking</h1>
-        <p className="opacity-80">Book laundry with approved shops, manage categories and pricing per shop, and track your orders.</p>
+        <p className="opacity-80">Book laundry, explore shop services, and track your orders easily.</p>
         <div className="flex gap-3">
           <Link to="/login" className="px-4 py-2 rounded-lg bg-bubble-dark text-white">Login</Link>
           <Link to="/register" className="px-4 py-2 rounded-lg bg-white/80">Register</Link>
