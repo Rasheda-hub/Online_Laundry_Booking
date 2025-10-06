@@ -14,21 +14,12 @@ from routes.admin import router as admin_router
 from routes.bookings import router as bookings_router
 from routes.categories import router as categories_router
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 app = FastAPI(title=settings.app_name)
 
-# CORS: Only needed if frontend is on a different domain
-# Since React is served from /static, same-origin requests don't need CORS
-# Uncomment below only if you deploy frontend separately
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["https://your-frontend-domain.com"],
-#     allow_credentials=True,
-#     allow_methods=["*"],
-#     allow_headers=["*"],
-# )
-
+# Include your API routers
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(services_router)
@@ -38,7 +29,9 @@ app.include_router(bookings_router)
 app.include_router(admin_router)
 app.include_router(categories_router)
 app.include_router(notifications_router)
-# Serve static files (React build)
+
+# Serve static files - Mount both assets and static directories
+app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.on_event("startup")
@@ -53,6 +46,11 @@ def startup_event():
 # Serve the main React page
 @app.get("/")
 async def root():
+    return FileResponse("static/index.html")
+
+# Catch-all route for React Router
+@app.get("/{path_name:path}")
+async def catch_all(path_name: str):
     return FileResponse("static/index.html")
 
 @app.on_event("shutdown")
