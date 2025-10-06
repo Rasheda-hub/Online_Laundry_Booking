@@ -1,0 +1,115 @@
+import React, { useState } from 'react'
+import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom'
+import Login from './pages/Login.jsx'
+import Register from './pages/Register.jsx'
+import CustomerDashboard from './pages/customer/Dashboard.jsx'
+import BookingForm from './pages/customer/BookingForm.jsx'
+import Orders from './pages/customer/Orders.jsx'
+import ProviderDashboard from './pages/provider/Dashboard.jsx'
+import AdminPanel from './pages/admin/AdminPanel.jsx'
+import Profile from './pages/Profile.jsx'
+import Receipts from './pages/Receipts.jsx'
+import { AuthProvider, useAuth } from './context/AuthContext.jsx'
+import Avatar from './components/Avatar.jsx'
+import Sidebar from './components/Sidebar.jsx'
+import Bubbles from './components/Bubbles.jsx'
+
+function ProtectedRoute({ children, allow }) {
+  const { user, token, loading } = useAuth()
+  if (loading) return <div className="p-6 text-center">Loading…</div>
+  if (!token || !user) return <Navigate to="/login" replace />
+  if (allow && !allow.includes(user.role)) return <Navigate to="/" replace />
+  return children
+}
+
+function Layout({ children }) {
+  const { user } = useAuth()
+  const { pathname } = useLocation()
+  const isAuthPage = pathname === '/login' || pathname === '/register'
+  const [mobileOpen, setMobileOpen] = useState(false)
+  return (
+    <div className="min-h-screen bg-gradient-bubble relative font-rounded text-slate-800">
+      <Bubbles />
+      <header className="flex items-center justify-between px-6 py-4">
+        {/* Disable brand navigation when logged in */}
+        {user ? (
+          <div className="flex items-center gap-2 text-xl font-semibold select-none cursor-default">
+            <span className="inline-flex h-8 w-8 rounded-full bg-white/70 items-center justify-center">🧺</span>
+            LaundryApp
+          </div>
+        ) : (
+          <Link to="/" className="flex items-center gap-2 text-xl font-semibold">
+            <span className="inline-flex h-8 w-8 rounded-full bg-white/70 items-center justify-center">🧺</span>
+            LaundryApp
+          </Link>
+        )}
+        {/* Mobile hamburger for sidebar */}
+        <div>
+          {user && (
+            <button
+              onClick={()=>setMobileOpen(true)}
+              className="md:hidden inline-flex items-center justify-center h-9 w-9 rounded bg-white/70"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+          )}
+        </div>
+      </header>
+      {/* Two-column layout when logged in: Sidebar + Main */}
+      <div className="relative z-10 max-w-6xl mx-auto px-4 py-4 flex gap-4">
+        {user && <Sidebar mobileOpen={mobileOpen} onClose={()=>setMobileOpen(false)} />}
+        <main className={`flex-1 ${user ? '' : ''}`}>{children}</main>
+      </div>
+      <footer className="px-6 py-6 text-xs text-center opacity-70">© {new Date().getFullYear()} LaundryApp</footer>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <Routes>
+        <Route path="/" element={<Layout><Home /></Layout>} />
+        <Route path="/login" element={<Layout><Login /></Layout>} />
+        <Route path="/register" element={<Layout><Register /></Layout>} />
+        {/* Customer */}
+        <Route path="/customer" element={<Layout><ProtectedRoute allow={["customer","admin"]}><CustomerDashboard /></ProtectedRoute></Layout>} />
+        <Route path="/customer/book" element={<Layout><ProtectedRoute allow={["customer","admin"]}><BookingForm /></ProtectedRoute></Layout>} />
+        <Route path="/customer/orders" element={<Layout><ProtectedRoute allow={["customer","admin"]}><Orders /></ProtectedRoute></Layout>} />
+        {/* Provider */}
+        <Route path="/provider" element={<Layout><ProtectedRoute allow={["provider","admin"]}><ProviderDashboard /></ProtectedRoute></Layout>} />
+        {/* Admin */}
+        <Route path="/admin" element={<Layout><ProtectedRoute allow={["admin"]}><AdminPanel /></ProtectedRoute></Layout>} />
+        {/* Profile for any logged-in user */}
+        <Route path="/profile" element={<Layout><ProtectedRoute allow={["customer","provider","admin"]}><Profile /></ProtectedRoute></Layout>} />
+        {/* Receipts for any logged-in user */}
+        <Route path="/receipts" element={<Layout><ProtectedRoute allow={["customer","provider","admin"]}><Receipts /></ProtectedRoute></Layout>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AuthProvider>
+  )
+}
+
+function Home(){
+  return (
+    <div className="grid md:grid-cols-2 gap-6 items-center">
+      <div className="space-y-4">
+        <h1 className="text-3xl md:text-5xl font-bold">Online Laundry Booking</h1>
+        <p className="opacity-80">Book laundry with approved shops, manage categories and pricing per shop, and track your orders.</p>
+        <div className="flex gap-3">
+          <Link to="/login" className="px-4 py-2 rounded-lg bg-bubble-dark text-white">Login</Link>
+          <Link to="/register" className="px-4 py-2 rounded-lg bg-white/80">Register</Link>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-3 text-5xl">
+        <div className="p-6 bg-white/70 rounded-2xl text-center">🧼</div>
+        <div className="p-6 bg-white/70 rounded-2xl text-center">👕</div>
+        <div className="p-6 bg-white/70 rounded-2xl text-center">🧺</div>
+        <div className="p-6 bg-white/70 rounded-2xl text-center">🫧</div>
+        <div className="p-6 bg-white/70 rounded-2xl text-center">🧴</div>
+        <div className="p-6 bg-white/70 rounded-2xl text-center">🧦</div>
+      </div>
+    </div>
+  )
+}

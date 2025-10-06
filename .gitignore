@@ -1,0 +1,22 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Node / Vite
+frontend-react/node_modules/
+frontend-react/dist/
+
+# Env files (keep secrets out of git)
+backend/.env
+frontend-react/.env
+
+# Logs and OS/editor files
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Build caches
+.cache/

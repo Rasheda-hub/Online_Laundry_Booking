@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bubble1: rgba(255,255,255,0.35);
+  --bubble2: rgba(255,255,255,0.25);
+  --grad-start: #a78bfa; /* violet-400 */
+  --grad-mid: #60a5fa;   /* sky-400 */
+  --grad-end: #34d399;   /* emerald-400 */
+}
+
+.bubbles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.bubble {
+  position: absolute;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 30%, var(--bubble1), var(--bubble2));
+  filter: blur(0.5px);
+}
+
+/* Cute minimalist gradient background */
+.bg-gradient-bubble {
+  background: radial-gradient(1200px 600px at -10% -20%, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.05) 60%, transparent 70%),
+              linear-gradient(135deg, var(--grad-start) 0%, var(--grad-mid) 45%, var(--grad-end) 100%);
+}
+
+@layer base {
+  html, body, #root { height: 100%; }
+  body { @apply text-slate-800; }
+}
+
+@layer components {
+  .card { @apply bg-white/80 rounded-2xl shadow p-4; }
+  .btn { @apply inline-flex items-center justify-center rounded px-4 py-2 transition; }
+  .btn-primary { @apply btn bg-bubble-dark text-white; }
+  .btn-white { @apply btn bg-white text-slate-800; }
+  .btn-danger { @apply btn bg-red-100 text-red-700; }
+  .input { @apply w-full px-3 py-2 rounded border border-slate-200 bg-white/90; }
+  .chip { @apply inline-flex items-center px-3 py-1 rounded bg-white/80; }
+}
