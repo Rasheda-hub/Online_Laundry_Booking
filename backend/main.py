@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +19,18 @@ import os
 load_dotenv()
 app = FastAPI(title=settings.app_name)
 
+# CORS for local development (when running React dev server separately)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Include your API routers
 app.include_router(auth_router)
 app.include_router(users_router)
@@ -30,9 +42,16 @@ app.include_router(admin_router)
 app.include_router(categories_router)
 app.include_router(notifications_router)
 
-# Serve static files - Mount both assets and static directories
-app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Serve static files (React build)
+try:
+    app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
+except RuntimeError:
+    pass  # Directory doesn't exist yet (dev mode)
+
+try:
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+except RuntimeError:
+    pass  # Directory doesn't exist yet (dev mode)
 
 @app.on_event("startup")
 def startup_event():
@@ -43,15 +62,24 @@ def startup_event():
         # Re-raise so the app fails fast with a clear log
         raise
 
-# Serve the main React page
+# Serve the main React page (only if static files exist)
 @app.get("/")
 async def root():
-    return FileResponse("static/index.html")
+    if os.path.exists("static/index.html"):
+        return FileResponse("static/index.html")
+    return {"message": "API is running. Build frontend and place in static/ folder."}
 
-# Catch-all route for React Router
+# Catch-all route for React Router (must be last, only for non-API routes)
 @app.get("/{path_name:path}")
-async def catch_all(path_name: str):
-    return FileResponse("static/index.html")
+async def catch_all(path_name: str, request: Request):
+    # Don't catch API routes - let them 404 properly
+    if path_name.startswith(("auth/", "users/", "services/", "orders/", "receipts/", "bookings/", "admin/", "categories/", "notifications/", "docs", "openapi.json")):
+        return {"detail": "Not found"}
+    
+    # Serve React app for all other routes
+    if os.path.exists("static/index.html"):
+        return FileResponse("static/index.html")
+    return {"message": "API is running. Build frontend and place in static/ folder."}
 
 @app.on_event("shutdown")
 def shutdown_event():
