@@ -72,11 +72,14 @@ async def root():
 # Catch-all route for React Router (must be last, only for non-API routes)
 @app.get("/{path_name:path}")
 async def catch_all(path_name: str, request: Request):
-    # Don't catch API routes - let them 404 properly
-    if path_name.startswith(("auth/", "users/", "services/", "orders/", "receipts/", "bookings/", "admin/", "categories/", "notifications/", "docs", "openapi.json")):
-        return {"detail": "Not found"}
+    # Don't catch API routes - let them return proper 404 JSON
+    # Check without leading slash since path_name doesn't include it
+    api_prefixes = ("auth", "users", "services", "orders", "receipts", "bookings", "admin", "categories", "notifications", "docs", "openapi.json", "static", "assets")
+    if any(path_name.startswith(prefix) or path_name == prefix for prefix in api_prefixes):
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Not found")
     
-    # Serve React app for all other routes
+    # Serve React app for all other routes (e.g., /dashboard, /profile)
     if os.path.exists("static/index.html"):
         return FileResponse("static/index.html")
     return {"message": "API is running. Build frontend and place in static/ folder."}
