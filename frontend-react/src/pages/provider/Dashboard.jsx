@@ -117,40 +117,63 @@ export default function ProviderDashboard(){
       )}
 
       {tab === 'categories' && (
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 gap-3 md:gap-4">
           <div className="card">
-            <h3 className="font-semibold mb-3">{editingId ? 'Edit' : 'Create'} Category</h3>
+            <h3 className="font-semibold text-lg mb-3">🏷️ {editingId ? 'Edit' : 'Create'} Category</h3>
             <form onSubmit={saveCategory} className="space-y-3">
-              <input value={catForm.name} onChange={e=>setCatForm({...catForm, name:e.target.value})} placeholder="Name" className="input" required />
-              <select value={catForm.pricing_type} onChange={e=>setCatForm({...catForm, pricing_type:e.target.value})} className="input">
-                <option value="per_kilo">Per Kilo</option>
-                <option value="fixed">Fixed</option>
-              </select>
-              <input type="number" step="0.1" min="0" value={catForm.price} onChange={e=>setCatForm({...catForm, price:e.target.value})} placeholder="Price" className="input" required />
+              <div>
+                <label className="block text-sm font-medium mb-1">Category Name *</label>
+                <input value={catForm.name} onChange={e=>setCatForm({...catForm, name:e.target.value})} placeholder="e.g., Wash & Fold" className="input" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Pricing Type *</label>
+                <select value={catForm.pricing_type} onChange={e=>setCatForm({...catForm, pricing_type:e.target.value})} className="input">
+                  <option value="per_kilo">Per Kilogram</option>
+                  <option value="fixed">Fixed Price</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Price (₱) *</label>
+                <input type="number" step="0.1" min="0" value={catForm.price} onChange={e=>setCatForm({...catForm, price:e.target.value})} placeholder="0.00" className="input" required />
+              </div>
               {catForm.pricing_type === 'fixed' && (
-                <div className="grid grid-cols-2 gap-3">
-                  <input type="number" step="0.1" min="0" value={catForm.min_kilo} onChange={e=>setCatForm({...catForm, min_kilo:e.target.value})} placeholder="Min kg" className="input" />
-                  <input type="number" step="0.1" min="0" value={catForm.max_kilo} onChange={e=>setCatForm({...catForm, max_kilo:e.target.value})} placeholder="Max kg" className="input" />
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Min kg</label>
+                    <input type="number" step="0.1" min="0" value={catForm.min_kilo} onChange={e=>setCatForm({...catForm, min_kilo:e.target.value})} placeholder="0" className="input" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Max kg</label>
+                    <input type="number" step="0.1" min="0" value={catForm.max_kilo} onChange={e=>setCatForm({...catForm, max_kilo:e.target.value})} placeholder="0" className="input" />
+                  </div>
                 </div>
               )}
               <div className="flex gap-2">
-                <button className="btn-primary">{editingId? 'Update':'Create'}</button>
-                {editingId && <button type="button" onClick={()=>{setEditingId('');setCatForm(emptyCat)}} className="btn-white">Cancel</button>}
+                <button className="btn-primary flex-1">{editingId? '✅ Update':'➕ Create'}</button>
+                {editingId && <button type="button" onClick={()=>{setEditingId('');setCatForm(emptyCat)}} className="btn-white flex-1">❌ Cancel</button>}
               </div>
             </form>
           </div>
           <div className="card">
-            <h3 className="font-semibold mb-3">Your Categories</h3>
+            <h3 className="font-semibold text-lg mb-3">📝 Your Categories</h3>
+            {categories.length === 0 && (
+              <div className="text-center py-6 text-gray-500">
+                <div className="text-3xl mb-2">🏷️</div>
+                <div className="text-sm">No categories yet</div>
+              </div>
+            )}
             <div className="grid gap-2">
               {categories.map(c => (
-                <div key={c.id} className="flex items-center justify-between bg-white rounded p-3">
-                  <div>
-                    <div className="font-medium">{c.name}</div>
-                    <div className="text-xs opacity-70">{c.pricing_type === 'per_kilo' ? `₱${c.price} / kg` : `₱${c.price} for ${c.min_kilo||'?'}–${c.max_kilo||'?'} kg`}</div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={()=>startEdit(c)} className="btn-white px-3 py-1">Edit</button>
-                    <button onClick={()=>removeCategory(c.id)} className="btn-danger px-3 py-1">Delete</button>
+                <div key={c.id} className="bg-white rounded-lg p-3 border hover:shadow-md transition-shadow">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{c.name}</div>
+                      <div className="text-xs text-gray-600">{c.pricing_type === 'per_kilo' ? `₱${c.price} / kg` : `₱${c.price} for ${c.min_kilo||'?'}–${c.max_kilo||'?'} kg`}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={()=>startEdit(c)} className="btn-white text-xs px-3 py-1">✏️ Edit</button>
+                      <button onClick={()=>removeCategory(c.id)} className="btn-danger text-xs px-3 py-1">🗑️ Delete</button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -169,12 +192,12 @@ export default function ProviderDashboard(){
           )}
           {bookings.map(b => (
             <div key={b.id} className="card hover:shadow-lg transition-shadow">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="font-semibold text-lg">{b.category_name}</div>
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-base sm:text-lg truncate">{b.category_name}</div>
                   <div className="text-xs text-gray-500">Booking #{b.id.slice(0,8)}</div>
                 </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(b.status)}`}>
+                <div className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(b.status)}`}>
                   {getStatusLabel(b.status)}
                 </div>
               </div>
@@ -194,8 +217,8 @@ export default function ProviderDashboard(){
                 📅 {formatDateTime(b.schedule_at)}
               </div>
               
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Status:</label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                <label className="text-sm font-medium whitespace-nowrap">Status:</label>
                 <select
                   value={b.status}
                   onChange={(e)=>{

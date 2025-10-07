@@ -80,8 +80,7 @@ export default function Sidebar({ mobileOpen = false, onClose = ()=>{} }){
             )}
             {user.role === 'admin' && (
               <>
-                <Item to="/admin" label="Admin" emoji="🛠️" onClick={onClose} />
-                <Item to="/receipts" label="Receipts" emoji="🧾" onClick={onClose} />
+                <Item to="/admin" label="Admin Dashboard" emoji="🛠️" onClick={onClose} />
                 <Item to="/profile" label="Profile" emoji="👤" onClick={onClose} />
               </>
             )}
