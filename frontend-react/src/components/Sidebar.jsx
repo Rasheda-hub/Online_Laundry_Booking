@@ -68,6 +68,7 @@ export default function Sidebar({ mobileOpen = false, onClose = ()=>{} }){
                 <Item to="/customer" label="Dashboard" emoji="🏠" onClick={onClose} />
                 <Item to="/customer/orders" label="My Orders" emoji="📦" onClick={onClose} />
                 <Item to="/receipts" label="Receipts" emoji="🧾" onClick={onClose} />
+                <Item to="/notifications" label="Notifications" emoji="🔔" onClick={onClose} />
                 <Item to="/profile" label="Profile" emoji="👤" onClick={onClose} />
               </>
             )}
@@ -75,12 +76,14 @@ export default function Sidebar({ mobileOpen = false, onClose = ()=>{} }){
               <>
                 <Item to="/provider" label="Dashboard" emoji="🏠" onClick={onClose} />
                 <Item to="/receipts" label="Receipts" emoji="🧾" onClick={onClose} />
+                <Item to="/notifications" label="Notifications" emoji="🔔" onClick={onClose} />
                 <Item to="/profile" label="Profile" emoji="👤" onClick={onClose} />
               </>
             )}
             {user.role === 'admin' && (
               <>
                 <Item to="/admin" label="Admin Dashboard" emoji="🛠️" onClick={onClose} />
+                <Item to="/notifications" label="Notifications" emoji="🔔" onClick={onClose} />
                 <Item to="/profile" label="Profile" emoji="👤" onClick={onClose} />
               </>
             )}

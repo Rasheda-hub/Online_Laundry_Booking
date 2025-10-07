@@ -9,6 +9,7 @@ import ProviderDashboard from './pages/provider/Dashboard.jsx'
 import AdminPanel from './pages/admin/AdminPanel.jsx'
 import Profile from './pages/Profile.jsx'
 import Receipts from './pages/Receipts.jsx'
+import Notifications from './pages/Notifications.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import Avatar from './components/Avatar.jsx'
 import Sidebar from './components/Sidebar.jsx'
@@ -97,6 +98,8 @@ export default function App() {
         <Route path="/profile" element={<Layout><ProtectedRoute allow={["customer","provider","admin"]}><Profile /></ProtectedRoute></Layout>} />
         {/* Receipts for any logged-in user */}
         <Route path="/receipts" element={<Layout><ProtectedRoute allow={["customer","provider","admin"]}><Receipts /></ProtectedRoute></Layout>} />
+        {/* Notifications for any logged-in user */}
+        <Route path="/notifications" element={<Layout><ProtectedRoute allow={["customer","provider","admin"]}><Notifications /></ProtectedRoute></Layout>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
