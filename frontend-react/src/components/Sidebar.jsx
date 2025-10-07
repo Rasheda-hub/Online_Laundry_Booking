@@ -37,12 +37,12 @@ export default function Sidebar({ mobileOpen = false, onClose = ()=>{} }){
       
       {/* Sidebar */}
       <aside className={`
-        fixed md:sticky top-0 left-0 h-screen md:h-auto
-        w-64 shrink-0 p-4 z-50
+        fixed md:sticky top-0 md:top-4 left-0 h-screen md:h-auto
+        w-64 shrink-0 p-4 md:py-0 z-50
         transition-transform duration-300 ease-in-out
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-xl md:shadow-none h-full md:h-auto overflow-y-auto">
+        <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-4 shadow-xl md:shadow-none h-full md:h-auto md:max-h-[calc(100vh-2rem)] overflow-y-auto">
           {/* Close button for mobile */}
           {mobileOpen && (
             <button 

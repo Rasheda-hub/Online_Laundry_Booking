@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { registerCustomer, registerProvider } from '../api/users.js'
+import { useAuth } from '../context/AuthContext.jsx'
 
 export default function Register(){
   const nav = useNavigate()
+  const { login } = useAuth()
   const [tab, setTab] = useState('customer')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,6 +28,9 @@ export default function Register(){
     e.preventDefault()
     setError(''); setLoading(true)
     try {
+      const email = tab === 'customer' ? cEmail : pEmail
+      const password = tab === 'customer' ? cPassword : pPassword
+      
       if (tab === 'customer'){
         await registerCustomer({
           full_name: cFullName,
@@ -43,7 +48,16 @@ export default function Register(){
           shop_address: pShopAddress,
         })
       }
-      nav('/login')
+      
+      // Auto-login after successful registration
+      await login({ email, password })
+      
+      // Navigate to appropriate dashboard
+      if (tab === 'customer') {
+        nav('/customer')
+      } else {
+        nav('/provider')
+      }
     } catch (err){
       setError(err.message)
     } finally { setLoading(false) }
