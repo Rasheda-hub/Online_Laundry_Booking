@@ -88,18 +88,18 @@ export default function ProviderDashboard(){
   const stats = summarize(bookings)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-full overflow-hidden">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold">Provider Dashboard</h2>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-2xl md:text-3xl font-bold truncate">Provider Dashboard</h2>
           <RealTimeClock className="text-xs text-gray-600 mt-1" />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <NotificationsBell />
         </div>
       </div>
       
-      <div className="flex gap-2 overflow-x-auto pb-2">
+      <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">
         <button onClick={()=>setTab('summary')} className={`btn whitespace-nowrap ${tab==='summary'?'bg-bubble-dark text-white':'btn-white'}`}>📊 Dashboard</button>
         <button onClick={()=>setTab('categories')} className={`btn whitespace-nowrap ${tab==='categories'?'bg-bubble-dark text-white':'btn-white'}`}>🏷️ Categories</button>
         <button onClick={()=>setTab('bookings')} className={`btn whitespace-nowrap ${tab==='bookings'?'bg-bubble-dark text-white':'btn-white'}`}>📦 Bookings</button>
@@ -117,62 +117,62 @@ export default function ProviderDashboard(){
       )}
 
       {tab === 'categories' && (
-        <div className="grid md:grid-cols-2 gap-3 md:gap-4">
-          <div className="card">
-            <h3 className="font-semibold text-lg mb-3">🏷️ {editingId ? 'Edit' : 'Create'} Category</h3>
+        <div className="grid md:grid-cols-2 gap-3 md:gap-4 max-w-full">
+          <div className="card min-w-0">
+            <h3 className="font-semibold text-base md:text-lg mb-3 truncate">🏷️ {editingId ? 'Edit' : 'Create'} Category</h3>
             <form onSubmit={saveCategory} className="space-y-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Category Name *</label>
-                <input value={catForm.name} onChange={e=>setCatForm({...catForm, name:e.target.value})} placeholder="e.g., Wash & Fold" className="input" required />
+                <input value={catForm.name} onChange={e=>setCatForm({...catForm, name:e.target.value})} placeholder="e.g., Wash & Fold" className="input text-sm" required />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Pricing Type *</label>
-                <select value={catForm.pricing_type} onChange={e=>setCatForm({...catForm, pricing_type:e.target.value})} className="input">
+                <select value={catForm.pricing_type} onChange={e=>setCatForm({...catForm, pricing_type:e.target.value})} className="input text-sm">
                   <option value="per_kilo">Per Kilogram</option>
                   <option value="fixed">Fixed Price</option>
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Price (₱) *</label>
-                <input type="number" step="0.1" min="0" value={catForm.price} onChange={e=>setCatForm({...catForm, price:e.target.value})} placeholder="0.00" className="input" required />
+                <input type="number" step="0.1" min="0" value={catForm.price} onChange={e=>setCatForm({...catForm, price:e.target.value})} placeholder="0.00" className="input text-sm" required />
               </div>
               {catForm.pricing_type === 'fixed' && (
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Min kg</label>
-                    <input type="number" step="0.1" min="0" value={catForm.min_kilo} onChange={e=>setCatForm({...catForm, min_kilo:e.target.value})} placeholder="0" className="input" />
+                    <label className="block text-xs font-medium mb-1">Min kg</label>
+                    <input type="number" step="0.1" min="0" value={catForm.min_kilo} onChange={e=>setCatForm({...catForm, min_kilo:e.target.value})} placeholder="0" className="input text-sm" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Max kg</label>
-                    <input type="number" step="0.1" min="0" value={catForm.max_kilo} onChange={e=>setCatForm({...catForm, max_kilo:e.target.value})} placeholder="0" className="input" />
+                    <label className="block text-xs font-medium mb-1">Max kg</label>
+                    <input type="number" step="0.1" min="0" value={catForm.max_kilo} onChange={e=>setCatForm({...catForm, max_kilo:e.target.value})} placeholder="0" className="input text-sm" />
                   </div>
                 </div>
               )}
               <div className="flex gap-2">
-                <button className="btn-primary flex-1">{editingId? '✅ Update':'➕ Create'}</button>
-                {editingId && <button type="button" onClick={()=>{setEditingId('');setCatForm(emptyCat)}} className="btn-white flex-1">❌ Cancel</button>}
+                <button type="submit" className="btn-primary flex-1 text-sm">{editingId? '✅ Update':'➕ Create'}</button>
+                {editingId && <button type="button" onClick={()=>{setEditingId('');setCatForm(emptyCat)}} className="btn-white flex-1 text-sm">❌ Cancel</button>}
               </div>
             </form>
           </div>
-          <div className="card">
-            <h3 className="font-semibold text-lg mb-3">📝 Your Categories</h3>
+          <div className="card min-w-0">
+            <h3 className="font-semibold text-base md:text-lg mb-3 truncate">📝 Your Categories</h3>
             {categories.length === 0 && (
               <div className="text-center py-6 text-gray-500">
                 <div className="text-3xl mb-2">🏷️</div>
                 <div className="text-sm">No categories yet</div>
               </div>
             )}
-            <div className="grid gap-2">
+            <div className="grid gap-2 max-w-full">
               {categories.map(c => (
-                <div key={c.id} className="bg-white rounded-lg p-3 border hover:shadow-md transition-shadow">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{c.name}</div>
-                      <div className="text-xs text-gray-600">{c.pricing_type === 'per_kilo' ? `₱${c.price} / kg` : `₱${c.price} for ${c.min_kilo||'?'}–${c.max_kilo||'?'} kg`}</div>
+                <div key={c.id} className="bg-white rounded-lg p-2 md:p-3 border hover:shadow-md transition-shadow min-w-0">
+                  <div className="flex flex-col gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm md:text-base truncate">{c.name}</div>
+                      <div className="text-xs text-gray-600 break-words">{c.pricing_type === 'per_kilo' ? `₱${c.price} / kg` : `₱${c.price} for ${c.min_kilo||'?'}–${c.max_kilo||'?'} kg`}</div>
                     </div>
-                    <div className="flex gap-2">
-                      <button onClick={()=>startEdit(c)} className="btn-white text-xs px-3 py-1">✏️ Edit</button>
-                      <button onClick={()=>removeCategory(c.id)} className="btn-danger text-xs px-3 py-1">🗑️ Delete</button>
+                    <div className="flex gap-1 md:gap-2 flex-wrap">
+                      <button onClick={()=>startEdit(c)} className="btn-white text-xs px-2 md:px-3 py-1 flex-1 min-w-[70px]">✏️ Edit</button>
+                      <button onClick={()=>removeCategory(c.id)} className="btn-danger text-xs px-2 md:px-3 py-1 flex-1 min-w-[70px]">🗑️ Del</button>
                     </div>
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export default function ProviderDashboard(){
       )}
 
       {tab === 'bookings' && (
-        <div className="grid gap-3">
+        <div className="grid gap-3 max-w-full">
           {bookings.length === 0 && (
             <div className="card text-center py-8">
               <div className="text-4xl mb-2">📦</div>
@@ -191,34 +191,36 @@ export default function ProviderDashboard(){
             </div>
           )}
           {bookings.map(b => (
-            <div key={b.id} className="card hover:shadow-lg transition-shadow">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 mb-3">
-                <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-base sm:text-lg truncate">{b.category_name}</div>
-                  <div className="text-xs text-gray-500">Booking #{b.id.slice(0,8)}</div>
-                </div>
-                <div className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusColor(b.status)}`}>
-                  {getStatusLabel(b.status)}
+            <div key={b.id} className="card hover:shadow-lg transition-shadow min-w-0">
+              <div className="flex flex-col gap-2 mb-3">
+                <div className="flex items-start justify-between gap-2 min-w-0">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm md:text-base truncate">{b.category_name}</div>
+                    <div className="text-xs text-gray-500">#{b.id.slice(0,8)}</div>
+                  </div>
+                  <div className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap shrink-0 ${getStatusColor(b.status)}`}>
+                    {getStatusLabel(b.status)}
+                  </div>
                 </div>
               </div>
               
               <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-                <div className="bg-gray-50 p-2 rounded">
+                <div className="bg-gray-50 p-2 rounded min-w-0">
                   <div className="text-xs text-gray-500">Weight</div>
-                  <div className="font-semibold">{b.weight_kg} kg</div>
+                  <div className="font-semibold truncate">{b.weight_kg} kg</div>
                 </div>
-                <div className="bg-gray-50 p-2 rounded">
+                <div className="bg-gray-50 p-2 rounded min-w-0">
                   <div className="text-xs text-gray-500">Total</div>
-                  <div className="font-semibold text-bubble-dark">₱{b.total_price}</div>
+                  <div className="font-semibold text-bubble-dark truncate">₱{b.total_price}</div>
                 </div>
               </div>
               
-              <div className="text-xs text-gray-600 mb-3">
+              <div className="text-xs text-gray-600 mb-3 break-words">
                 📅 {formatDateTime(b.schedule_at)}
               </div>
               
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <label className="text-sm font-medium whitespace-nowrap">Status:</label>
+              <div className="flex flex-col gap-2 min-w-0">
+                <label className="text-xs md:text-sm font-medium">Update Status:</label>
                 <select
                   value={b.status}
                   onChange={(e)=>{
@@ -227,13 +229,13 @@ export default function ProviderDashboard(){
                     if (st === 'in_progress' && b.status === 'pending') return onAccept(b.id)
                     onStatus(b.id, st)
                   }}
-                  className="input flex-1 text-sm"
+                  className="input text-xs md:text-sm w-full"
                 >
                   <option value="pending">⏳ Pending</option>
                   <option value="in_progress">🌀 In Progress</option>
-                  <option value="ready">✅ Ready to Pickup</option>
-                  <option value="completed">✔️ Completed</option>
-                  <option value="rejected">❌ Rejected</option>
+                  <option value="ready">✅ Ready</option>
+                  <option value="completed">✔️ Done</option>
+                  <option value="rejected">❌ Reject</option>
                 </select>
               </div>
             </div>
