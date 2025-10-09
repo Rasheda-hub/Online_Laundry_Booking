@@ -12,7 +12,7 @@ import Receipts from './pages/Receipts.jsx'
 import Notifications from './pages/Notifications.jsx'
 import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import Avatar from './components/Avatar.jsx'
-import Sidebar from './components/Sidebar.jsx'
+import BottomNav from './components/BottomNav.jsx'
 import Bubbles from './components/Bubbles.jsx'
 
 function ProtectedRoute({ children, allow }) {
@@ -27,7 +27,6 @@ function Layout({ children }) {
   const { user } = useAuth()
   const { pathname } = useLocation()
   const isAuthPage = pathname === '/login' || pathname === '/register'
-  const [mobileOpen, setMobileOpen] = useState(false)
   
   return (
     <div className="min-h-screen bg-gradient-bubble relative font-rounded text-slate-800">
@@ -48,31 +47,22 @@ function Layout({ children }) {
               <span className="hidden sm:inline">LaundryApp</span>
             </Link>
           )}
-          
-          {/* Mobile hamburger for sidebar */}
-          {user && (
-            <button
-              onClick={()=>setMobileOpen(true)}
-              className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-lg bg-white/80 hover:bg-white transition-colors shadow-sm"
-              aria-label="Open menu"
-            >
-              <span className="text-xl">☰</span>
-            </button>
-          )}
         </div>
       </header>
       
-      {/* Main content area with sidebar */}
+      {/* Main content area */}
       <div className="relative z-10">
-        <div className={`${user ? 'max-w-7xl mx-auto flex' : 'max-w-6xl mx-auto'}`}>
-          {user && <Sidebar mobileOpen={mobileOpen} onClose={()=>setMobileOpen(false)} />}
-          <main className={`flex-1 min-w-0 px-4 py-6 ${user ? 'md:px-6' : ''}`}>
+        <div className="max-w-6xl mx-auto">
+          <main className={`px-4 py-6 ${user ? 'pb-24' : ''}`}>
             {children}
           </main>
         </div>
       </div>
       
-      <footer className="px-6 py-6 text-xs text-center opacity-70 mt-8">
+      {/* Bottom Navigation */}
+      {user && <BottomNav />}
+      
+      <footer className={`px-6 py-6 text-xs text-center opacity-70 mt-8 ${user ? 'mb-16' : ''}`}>
         © {new Date().getFullYear()} LaundryApp • Made with 💙
       </footer>
     </div>

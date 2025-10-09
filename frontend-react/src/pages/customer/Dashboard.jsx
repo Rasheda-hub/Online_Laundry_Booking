@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { apiFetch } from '../../api/client.js'
 import { searchProviders } from '../../api/users.js'
-import BottomNav from '../../components/BottomNav.jsx'
 import NotificationsBell from '../../components/NotificationsBell.jsx'
 import RealTimeClock from '../../components/RealTimeClock.jsx'
 
@@ -34,7 +33,7 @@ export default function CustomerDashboard(){
   }
 
   return (
-    <div className="space-y-4 pb-20 md:pb-4">
+    <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold">Welcome{user?.full_name ? `, ${user.full_name}`:''} 👋</h2>
@@ -100,7 +99,6 @@ export default function CustomerDashboard(){
           </div>
         ))}
       </div>
-      <BottomNav />
     </div>
   )
 }
