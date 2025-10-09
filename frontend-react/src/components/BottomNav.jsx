@@ -33,9 +33,9 @@ export default function BottomNav(){
     <nav className="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t flex items-center justify-around z-50 shadow-lg">
       {user.role === 'customer' && (
         <>
-          <Item to="/customer" label="Home" emoji="🏠" />
           <Item to="/customer/orders" label="Orders" emoji="📦" />
           <Item to="/receipts" label="Receipts" emoji="🧾" />
+          <Item to="/customer" label="Home" emoji="🏠" />
           <Item to="/notifications" label="Alerts" emoji="🔔" />
           <Item to="/profile" label="Profile" emoji="👤" />
           <LogoutButton />

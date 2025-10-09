@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { apiFetch } from '../../api/client.js'
 import { searchProviders } from '../../api/users.js'
-import NotificationsBell from '../../components/NotificationsBell.jsx'
 import RealTimeClock from '../../components/RealTimeClock.jsx'
 
 export default function CustomerDashboard(){
@@ -34,15 +33,9 @@ export default function CustomerDashboard(){
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold">Welcome{user?.full_name ? `, ${user.full_name}`:''} 👋</h2>
-          <RealTimeClock className="text-xs text-gray-600 mt-1" />
-        </div>
-        <div className="flex gap-2">
-          <NotificationsBell />
-          <button onClick={()=>nav('/customer/orders')} className="btn-white text-sm">📦 My Orders</button>
-        </div>
+      <div>
+        <h2 className="text-2xl md:text-3xl font-bold">Welcome{user?.full_name ? `, ${user.full_name}`:''} 👋</h2>
+        <RealTimeClock className="text-xs text-gray-600 mt-1" />
       </div>
 
       <div className="card">
