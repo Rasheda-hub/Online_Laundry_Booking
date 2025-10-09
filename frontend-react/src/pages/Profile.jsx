@@ -11,6 +11,7 @@ export default function Profile(){
   const [pwdErr, setPwdErr] = useState('')
   const [pwdForm, setPwdForm] = useState({ current_password: '', new_password: '', confirm: '' })
   const [editMode, setEditMode] = useState(false)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
 
   const [form, setForm] = useState(()=>{
     if (!user) return {}
@@ -64,8 +65,9 @@ export default function Profile(){
     }
     try {
       await changePassword(token, { current_password: pwdForm.current_password, new_password: pwdForm.new_password })
-      setPwdMsg('Password changed')
+      setPwdMsg('Password changed successfully!')
       setPwdForm({ current_password: '', new_password: '', confirm: '' })
+      setShowPasswordForm(false)
     } catch (e){ setPwdErr(e.message) }
   }
 
@@ -164,26 +166,59 @@ export default function Profile(){
       </div>
       
       <div className="card">
-        <h3 className="text-xl font-bold mb-4">🔐 Change Password</h3>
-        {pwdErr && <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg mb-3">⚠️ {pwdErr}</div>}
-        {pwdMsg && <div className="bg-green-50 text-green-700 text-sm p-3 rounded-lg mb-3">✅ {pwdMsg}</div>}
-        <form onSubmit={onChangePassword} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Current Password *</label>
-            <input type="password" value={pwdForm.current_password} onChange={e=>setPwdForm({...pwdForm, current_password:e.target.value})} className="input" required />
-          </div>
-          <div className="grid md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-2">New Password *</label>
-              <input type="password" value={pwdForm.new_password} onChange={e=>setPwdForm({...pwdForm, new_password:e.target.value})} className="input" required />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Confirm Password *</label>
-              <input type="password" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm, confirm:e.target.value})} className="input" required />
-            </div>
-          </div>
-          <button className="btn-primary w-full md:w-auto">🔄 Update Password</button>
-        </form>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold">🔐 Change Password</h3>
+          {!showPasswordForm && (
+            <button 
+              onClick={() => setShowPasswordForm(true)} 
+              className="btn-primary text-sm"
+            >
+              🔑 Change Password
+            </button>
+          )}
+        </div>
+        
+        {showPasswordForm && (
+          <>
+            {pwdErr && <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg mb-3">⚠️ {pwdErr}</div>}
+            {pwdMsg && <div className="bg-green-50 text-green-700 text-sm p-3 rounded-lg mb-3">✅ {pwdMsg}</div>}
+            <form onSubmit={onChangePassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Current Password *</label>
+                <input type="password" value={pwdForm.current_password} onChange={e=>setPwdForm({...pwdForm, current_password:e.target.value})} className="input" required />
+              </div>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium mb-2">New Password *</label>
+                  <input type="password" value={pwdForm.new_password} onChange={e=>setPwdForm({...pwdForm, new_password:e.target.value})} className="input" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Confirm Password *</label>
+                  <input type="password" value={pwdForm.confirm} onChange={e=>setPwdForm({...pwdForm, confirm:e.target.value})} className="input" required />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="btn-primary flex-1 md:flex-none">🔄 Update Password</button>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setShowPasswordForm(false)
+                    setPwdForm({ current_password: '', new_password: '', confirm: '' })
+                    setPwdErr('')
+                    setPwdMsg('')
+                  }} 
+                  className="btn-white flex-1 md:flex-none"
+                >
+                  ❌ Cancel
+                </button>
+              </div>
+            </form>
+          </>
+        )}
+        
+        {!showPasswordForm && (
+          <p className="text-sm text-gray-600">Click the button above to change your password.</p>
+        )}
       </div>
     </div>
   )
