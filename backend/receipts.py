@@ -146,6 +146,8 @@ def list_my_receipts(current_user: UserPublic = Depends(get_current_user)):
                     attempts += 1
                     if attempts >= 2:
                         raise
+            if not data:
+                continue  # Skip this receipt if not found
             r = data["r"]
             items = [it for it in data["items"] if it.get("service_id") is not None]
             if not items:
