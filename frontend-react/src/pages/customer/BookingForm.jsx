@@ -33,9 +33,27 @@ export default function BookingForm(){
     } catch (err){ setError(err.message) } finally { setLoading(false) }
   }
 
-  const estimatedPrice = weight && category.pricing_type === 'per_kilo' 
-    ? (parseFloat(weight) * category.price).toFixed(2)
-    : category.pricing_type === 'fixed' ? category.price : '0.00'
+  const estimatedPrice = (() => {
+    if (!weight || parseFloat(weight) <= 0) return '0.00'
+    
+    const w = parseFloat(weight)
+    
+    if (category.pricing_type === 'per_kilo') {
+      return (w * category.price).toFixed(2)
+    }
+    
+    if (category.pricing_type === 'fixed') {
+      const maxKg = category.max_kilo || 0
+      if (maxKg > 0) {
+        // Calculate how many "batches" of fixed price are needed
+        const batches = Math.ceil(w / maxKg)
+        return (batches * category.price).toFixed(2)
+      }
+      return category.price.toFixed(2)
+    }
+    
+    return '0.00'
+  })()
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">

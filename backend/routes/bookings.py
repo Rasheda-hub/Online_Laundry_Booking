@@ -96,12 +96,23 @@ def create_booking(payload: BookingCreate, current_user: UserPublic = Depends(ge
         if pricing_type == CategoryPricingType.per_kilo.value:
             total = price * weight
         else:
-            # fixed pricing requires weight within min/max (if provided)
+            # fixed pricing: calculate based on weight ranges
             min_k = float(catd.get("min_kilo")) if catd.get("min_kilo") is not None else None
             max_k = float(catd.get("max_kilo")) if catd.get("max_kilo") is not None else None
-            if (min_k is not None and weight < min_k) or (max_k is not None and weight > max_k):
-                raise HTTPException(status_code=400, detail="Weight outside fixed pricing range")
-            total = price
+            
+            # Check minimum weight requirement
+            if min_k is not None and weight < min_k:
+                raise HTTPException(status_code=400, detail=f"Weight must be at least {min_k} kg for this service")
+            
+            # Calculate total: if weight exceeds max, add multiple fixed prices
+            if max_k is not None and weight > max_k:
+                # Calculate how many "batches" are needed
+                import math
+                num_batches = math.ceil(weight / max_k)
+                total = price * num_batches
+            else:
+                # Weight is within range, charge single fixed price
+                total = price
 
         bid = str(uuid.uuid4())
         now = get_ph_now().isoformat()
