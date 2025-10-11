@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { listMyCategories, createCategory, updateCategory, deleteCategory } from '../../api/categories.js'
 import { listMyBookings, acceptBooking, rejectBooking, updateBookingStatus, confirmPayment } from '../../api/bookings.js'
-import NotificationsBell from '../../components/NotificationsBell.jsx'
 import RealTimeClock, { formatDateTime } from '../../components/RealTimeClock.jsx'
 
 export default function ProviderDashboard(){
@@ -97,9 +96,6 @@ export default function ProviderDashboard(){
         <div className="min-w-0 flex-1">
           <h2 className="text-2xl md:text-3xl font-bold truncate">Provider Dashboard</h2>
           <RealTimeClock className="text-xs text-gray-600 mt-1" />
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <NotificationsBell />
         </div>
       </div>
       
