@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { listMyCategories, createCategory, updateCategory, deleteCategory } from '../../api/categories.js'
-import { listMyBookings, acceptBooking, rejectBooking, updateBookingStatus } from '../../api/bookings.js'
+import { listMyBookings, acceptBooking, rejectBooking, updateBookingStatus, confirmPayment } from '../../api/bookings.js'
 import NotificationsBell from '../../components/NotificationsBell.jsx'
 import RealTimeClock, { formatDateTime } from '../../components/RealTimeClock.jsx'
 
@@ -83,6 +83,10 @@ export default function ProviderDashboard(){
   async function onStatus(id, st){
     setError('')
     try { await updateBookingStatus(token, id, st); refreshAll() } catch(e){ setError(e.message) }
+  }
+  async function onConfirmPayment(id){
+    setError('')
+    try { await confirmPayment(token, id); refreshAll() } catch(e){ setError(e.message) }
   }
 
   const stats = summarize(bookings)
@@ -220,23 +224,66 @@ export default function ProviderDashboard(){
               </div>
               
               <div className="flex flex-col gap-2 min-w-0">
-                <label className="text-xs md:text-sm font-medium">Update Status:</label>
-                <select
-                  value={b.status}
-                  onChange={(e)=>{
-                    const st = e.target.value
-                    if (st === 'rejected') return onReject(b.id)
-                    if (st === 'in_progress' && b.status === 'pending') return onAccept(b.id)
-                    onStatus(b.id, st)
-                  }}
-                  className="input text-xs md:text-sm w-full"
-                >
-                  <option value="pending">⏳ Pending</option>
-                  <option value="in_progress">🌀 In Progress</option>
-                  <option value="ready">✅ Ready</option>
-                  <option value="completed">✔️ Done</option>
-                  <option value="rejected">❌ Reject</option>
-                </select>
+                {b.status === 'pending' && (
+                  <>
+                    <div className="text-xs md:text-sm font-medium text-yellow-700 bg-yellow-50 p-2 rounded">
+                      ⚠️ Awaiting your response
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => onAccept(b.id)}
+                        className="btn-primary flex-1 text-xs md:text-sm"
+                      >
+                        ✅ Accept
+                      </button>
+                      <button 
+                        onClick={() => onReject(b.id)}
+                        className="btn-danger flex-1 text-xs md:text-sm"
+                      >
+                        ❌ Reject
+                      </button>
+                    </div>
+                  </>
+                )}
+                
+                {b.status === 'confirmed' && (
+                  <>
+                    <div className="text-xs md:text-sm text-blue-700 bg-blue-50 p-2 rounded mb-2">
+                      ⏳ Waiting for customer to pay and deliver laundry
+                    </div>
+                    <button 
+                      onClick={() => onConfirmPayment(b.id)}
+                      className="btn-primary w-full text-xs md:text-sm"
+                    >
+                      💰 Confirm Payment Received
+                    </button>
+                  </>
+                )}
+                
+                {(b.status === 'in_progress' || b.status === 'ready') && (
+                  <>
+                    <label className="text-xs md:text-sm font-medium">Update Status:</label>
+                    <select
+                      value={b.status}
+                      onChange={(e)=> onStatus(b.id, e.target.value)}
+                      className="input text-xs md:text-sm w-full"
+                    >
+                      <option value="in_progress">🌀 In Progress</option>
+                      <option value="ready">✅ Ready for Pickup</option>
+                      <option value="completed">✔️ Completed</option>
+                    </select>
+                  </>
+                )}
+                
+                {(b.status === 'completed' || b.status === 'rejected') && (
+                  <div className={`text-xs md:text-sm p-2 rounded ${
+                    b.status === 'completed' 
+                      ? 'text-green-700 bg-green-50' 
+                      : 'text-red-700 bg-red-50'
+                  }`}>
+                    {b.status === 'completed' ? '✔️ Order completed' : '❌ Booking rejected'}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -259,7 +306,8 @@ function StatCard({ title, value, emoji, color }){
 function getStatusColor(s){
   switch(s){
     case 'pending': return 'bg-yellow-100 text-yellow-800'
-    case 'in_progress': return 'bg-blue-100 text-blue-800'
+    case 'confirmed': return 'bg-blue-100 text-blue-800'
+    case 'in_progress': return 'bg-indigo-100 text-indigo-800'
     case 'ready': return 'bg-purple-100 text-purple-800'
     case 'completed': return 'bg-green-100 text-green-800'
     case 'rejected': return 'bg-red-100 text-red-800'
@@ -270,8 +318,9 @@ function getStatusColor(s){
 function getStatusLabel(s) {
   switch(s){
     case 'pending': return '⏳ Pending'
+    case 'confirmed': return '✅ Confirmed'
     case 'in_progress': return '🌀 In Progress'
-    case 'ready': return '✅ Ready'
+    case 'ready': return '📦 Ready'
     case 'completed': return '✔️ Completed'
     case 'rejected': return '❌ Rejected'
     default: return s

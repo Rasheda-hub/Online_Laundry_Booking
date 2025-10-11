@@ -231,31 +231,159 @@ def list_my_bookings(current_user: UserPublic = Depends(get_current_user)):
 
 @router.post("/{booking_id}/accept", response_model=BookingPublic)
 def accept_booking(booking_id: str, current_user: UserPublic = Depends(get_current_user)):
+    """Provider accepts a pending booking, changes status to 'confirmed' and notifies customer"""
     if current_user.role != UserRole.provider:
         raise HTTPException(status_code=403, detail="Only providers can accept bookings")
     with get_session() as session:
-        rec = session.run(
-            "MATCH (b:Booking {id: $id})-[:FOR_PROVIDER]->(p:User {id: $pid}) SET b.status = 'in_progress' RETURN b",
+        # Check booking exists and is pending
+        check = session.run(
+            "MATCH (b:Booking {id: $id})-[:FOR_PROVIDER]->(p:User {id: $pid}) RETURN b.status AS status",
             id=booking_id,
             pid=current_user.id,
         ).single()
-        if not rec:
+        if not check:
             raise HTTPException(status_code=404, detail="Booking not found or not for this provider")
+        if check["status"] != BookingStatus.pending.value:
+            raise HTTPException(status_code=400, detail="Only pending bookings can be accepted")
+        
+        # Update status to confirmed
+        session.run(
+            "MATCH (b:Booking {id: $id})-[:FOR_PROVIDER]->(p:User {id: $pid}) SET b.status = 'confirmed' RETURN b",
+            id=booking_id,
+            pid=current_user.id,
+        )
+        
+        # Notify customer that booking is accepted
+        now = get_ph_now().isoformat()
+        session.run(
+            """
+            MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            MATCH (b)-[:FOR_PROVIDER]->(p:User)
+            CREATE (n:Notification {
+              id: randomUUID(),
+              type: 'booking_accepted',
+              message: 'Your booking for ' + cat.name + ' has been accepted by ' + p.shop_name + '. Please pay and deliver your laundry to proceed.',
+              created_at: $now,
+              read: false,
+              booking_id: $bid
+            })-[:FOR_USER]->(c)
+            """,
+            bid=booking_id,
+            now=now,
+        )
+        
         return BookingPublic(**_booking_to_public(session, booking_id))
 
 
 @router.post("/{booking_id}/reject", response_model=BookingPublic)
 def reject_booking(booking_id: str, current_user: UserPublic = Depends(get_current_user)):
+    """Provider rejects a pending booking and notifies customer"""
     if current_user.role != UserRole.provider:
         raise HTTPException(status_code=403, detail="Only providers can reject bookings")
     with get_session() as session:
-        rec = session.run(
-            "MATCH (b:Booking {id: $id})-[:FOR_PROVIDER]->(p:User {id: $pid}) SET b.status = 'rejected' RETURN b",
+        # Check booking exists and is pending
+        check = session.run(
+            "MATCH (b:Booking {id: $id})-[:FOR_PROVIDER]->(p:User {id: $pid}) RETURN b.status AS status",
             id=booking_id,
             pid=current_user.id,
         ).single()
-        if not rec:
+        if not check:
             raise HTTPException(status_code=404, detail="Booking not found or not for this provider")
+        if check["status"] != BookingStatus.pending.value:
+            raise HTTPException(status_code=400, detail="Only pending bookings can be rejected")
+        
+        # Update status to rejected
+        session.run(
+            "MATCH (b:Booking {id: $id})-[:FOR_PROVIDER]->(p:User {id: $pid}) SET b.status = 'rejected' RETURN b",
+            id=booking_id,
+            pid=current_user.id,
+        )
+        
+        # Notify customer that booking is rejected
+        now = get_ph_now().isoformat()
+        session.run(
+            """
+            MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            MATCH (b)-[:FOR_PROVIDER]->(p:User)
+            CREATE (n:Notification {
+              id: randomUUID(),
+              type: 'booking_rejected',
+              message: 'Your booking for ' + cat.name + ' has been rejected by ' + p.shop_name + '.',
+              created_at: $now,
+              read: false,
+              booking_id: $bid
+            })-[:FOR_USER]->(c)
+            """,
+            bid=booking_id,
+            now=now,
+        )
+        
+        # Update associated Order status to cancelled
+        session.run(
+            """
+            MATCH (b:Booking {id: $bid})<-[:FROM_BOOKING]-(o:Order)
+            SET o.status = 'cancelled'
+            """,
+            bid=booking_id,
+        )
+        
+        return BookingPublic(**_booking_to_public(session, booking_id))
+
+
+@router.post("/{booking_id}/confirm-payment", response_model=BookingPublic)
+def confirm_payment(booking_id: str, current_user: UserPublic = Depends(get_current_user)):
+    """Provider confirms customer payment and laundry delivery, changes status to 'in_progress'"""
+    if current_user.role != UserRole.provider:
+        raise HTTPException(status_code=403, detail="Only providers can confirm payment")
+    with get_session() as session:
+        # Check booking exists, belongs to provider, and is confirmed
+        check = session.run(
+            "MATCH (b:Booking {id: $id})-[:FOR_PROVIDER]->(p:User {id: $pid}) RETURN b.status AS status",
+            id=booking_id,
+            pid=current_user.id,
+        ).single()
+        if not check:
+            raise HTTPException(status_code=404, detail="Booking not found or not for this provider")
+        if check["status"] != BookingStatus.confirmed.value:
+            raise HTTPException(status_code=400, detail="Only confirmed bookings can be marked as paid")
+        
+        # Update status to in_progress
+        session.run(
+            "MATCH (b:Booking {id: $id})-[:FOR_PROVIDER]->(p:User {id: $pid}) SET b.status = 'in_progress' RETURN b",
+            id=booking_id,
+            pid=current_user.id,
+        )
+        
+        # Notify customer that payment is confirmed and laundry is being processed
+        now = get_ph_now().isoformat()
+        session.run(
+            """
+            MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            CREATE (n:Notification {
+              id: randomUUID(),
+              type: 'payment_confirmed',
+              message: 'Payment confirmed! Your laundry for ' + cat.name + ' is now being processed.',
+              created_at: $now,
+              read: false,
+              booking_id: $bid
+            })-[:FOR_USER]->(c)
+            """,
+            bid=booking_id,
+            now=now,
+        )
+        
+        # Update associated Order status to in_progress
+        session.run(
+            """
+            MATCH (b:Booking {id: $bid})<-[:FROM_BOOKING]-(o:Order)
+            SET o.status = 'in_progress'
+            """,
+            bid=booking_id,
+        )
+        
         return BookingPublic(**_booking_to_public(session, booking_id))
 
 
@@ -276,6 +404,7 @@ def update_status(booking_id: str, payload: BookingUpdateStatus, current_user: U
         # Send notification to customer about status update
         now = get_ph_now().isoformat()
         status_messages = {
+            'confirmed': 'Your booking has been accepted. Please pay and deliver your laundry.',
             'in_progress': 'Your laundry is now being processed',
             'ready': 'Your laundry is ready for pickup!',
             'completed': 'Your order has been completed. Thank you!',

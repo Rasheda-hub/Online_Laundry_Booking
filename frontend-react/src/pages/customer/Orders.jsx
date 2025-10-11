@@ -70,6 +70,30 @@ export default function Orders(){
               📅 {formatDateTime(o.schedule_at)}
             </div>
             
+            {o.status === 'pending' && (
+              <div className="bg-yellow-50 text-yellow-800 text-xs p-2 rounded">
+                ⏳ Waiting for provider to accept your booking
+              </div>
+            )}
+            
+            {o.status === 'confirmed' && (
+              <div className="bg-green-50 text-green-800 text-xs p-2 rounded">
+                ✅ Booking accepted! Please pay and deliver your laundry to the shop.
+              </div>
+            )}
+            
+            {o.status === 'in_progress' && (
+              <div className="bg-blue-50 text-blue-800 text-xs p-2 rounded">
+                🌀 Your laundry is being processed
+              </div>
+            )}
+            
+            {o.status === 'ready' && (
+              <div className="bg-purple-50 text-purple-800 text-xs p-2 rounded">
+                📦 Your laundry is ready for pickup!
+              </div>
+            )}
+            
             {o.status === 'completed' && (
               <button 
                 onClick={() => nav('/receipts')}
@@ -77,6 +101,12 @@ export default function Orders(){
               >
                 🧾 View Receipt
               </button>
+            )}
+            
+            {o.status === 'rejected' && (
+              <div className="bg-red-50 text-red-800 text-xs p-2 rounded">
+                ❌ This booking was rejected by the provider
+              </div>
             )}
           </div>
         ))}
@@ -88,9 +118,10 @@ export default function Orders(){
 function statusColor(s){
   switch(s){
     case 'pending': return 'bg-yellow-100 text-yellow-800'
+    case 'confirmed': return 'bg-green-100 text-green-800'
     case 'in_progress': return 'bg-blue-100 text-blue-800'
     case 'ready': return 'bg-purple-100 text-purple-800'
-    case 'completed': return 'bg-green-100 text-green-800'
+    case 'completed': return 'bg-gray-100 text-gray-800'
     case 'rejected': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
@@ -99,8 +130,9 @@ function statusColor(s){
 function formatStatus(s) {
   switch(s){
     case 'pending': return '⏳ Pending'
+    case 'confirmed': return '✅ Confirmed'
     case 'in_progress': return '🌀 In Progress'
-    case 'ready': return '✅ Ready'
+    case 'ready': return '📦 Ready'
     case 'completed': return '✔️ Completed'
     case 'rejected': return '❌ Rejected'
     default: return s

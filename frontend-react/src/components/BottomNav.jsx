@@ -66,7 +66,7 @@ export default function BottomNav(){
           <Item to="/customer/orders" label="Orders" emoji="📦" />
           <Item to="/receipts" label="Receipts" emoji="🧾" />
           <Item to="/customer" label="Home" emoji="🏠" />
-          <Item to="/notifications" label="Alerts" emoji="🔔" badge={unreadCount} />
+          <Item to="/notifications" label="Notifications" emoji="🔔" badge={unreadCount} />
           <Item to="/profile" label="Profile" emoji="👤" />
           <LogoutButton />
         </>
@@ -75,7 +75,7 @@ export default function BottomNav(){
         <>
           <Item to="/provider" label="Home" emoji="🏠" />
           <Item to="/receipts" label="Receipts" emoji="🧾" />
-          <Item to="/notifications" label="Alerts" emoji="🔔" badge={unreadCount} />
+          <Item to="/notifications" label="Notifications" emoji="🔔" badge={unreadCount} />
           <Item to="/profile" label="Profile" emoji="👤" />
           <LogoutButton />
         </>
@@ -83,7 +83,7 @@ export default function BottomNav(){
       {user.role === 'admin' && (
         <>
           <Item to="/admin" label="Admin" emoji="🛠️" />
-          <Item to="/notifications" label="Alerts" emoji="🔔" badge={unreadCount} />
+          <Item to="/notifications" label="Notifications" emoji="🔔" badge={unreadCount} />
           <Item to="/profile" label="Profile" emoji="👤" />
           <LogoutButton />
         </>

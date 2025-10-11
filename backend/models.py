@@ -129,11 +129,12 @@ class ChangePasswordRequest(BaseModel):
 
 # Booking domain (scheduling-based orders)
 class BookingStatus(str, Enum):
-    pending = "pending"
-    in_progress = "in_progress"
-    ready = "ready"
-    completed = "completed"
-    rejected = "rejected"
+    pending = "pending"  # Customer submitted, waiting for provider acceptance
+    confirmed = "confirmed"  # Provider accepted, waiting for customer payment/delivery
+    in_progress = "in_progress"  # Customer paid & delivered, laundry being processed
+    ready = "ready"  # Laundry ready for pickup
+    completed = "completed"  # Order completed
+    rejected = "rejected"  # Provider rejected the booking
 
 class BookingCreate(BaseModel):
     provider_id: str
