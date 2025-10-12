@@ -74,13 +74,15 @@ def create_booking(payload: BookingCreate, current_user: UserPublic = Depends(ge
     with get_session() as session:
         # validate provider & category
         prov = session.run(
-            "MATCH (p:User {id: $pid, role: 'provider'}) RETURN p.provider_status AS st",
+            "MATCH (p:User {id: $pid, role: 'provider'}) RETURN p.provider_status AS st, coalesce(p.is_available, true) AS is_available",
             pid=payload.provider_id,
         ).single()
         if not prov:
             raise HTTPException(status_code=400, detail="Provider not found")
         if prov["st"] != ProviderStatus.approved.value:
             raise HTTPException(status_code=400, detail="Provider not approved")
+        if not prov["is_available"]:
+            raise HTTPException(status_code=400, detail="This shop is currently closed and not accepting bookings")
         cat = session.run(
             "MATCH (cat:Category {id: $cid})-[:OFFERED_BY]->(p:User {id: $pid}) RETURN cat { .id, .name, .pricing_type, .price, .min_kilo, .max_kilo } AS cat",
             cid=payload.category_id,

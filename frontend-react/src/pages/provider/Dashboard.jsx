@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { listMyCategories, createCategory, updateCategory, deleteCategory } from '../../api/categories.js'
 import { listMyBookings, acceptBooking, rejectBooking, updateBookingStatus, confirmPayment } from '../../api/bookings.js'
+import { toggleAvailability } from '../../api/users.js'
 import RealTimeClock, { formatDateTime } from '../../components/RealTimeClock.jsx'
 
 export default function ProviderDashboard(){
@@ -88,6 +89,15 @@ export default function ProviderDashboard(){
     try { await confirmPayment(token, id); refreshAll() } catch(e){ setError(e.message) }
   }
 
+  async function onToggleAvailability(){
+    setError('')
+    try { 
+      await toggleAvailability(token)
+      // Refresh user data to get updated availability status
+      window.location.reload()
+    } catch(e){ setError(e.message) }
+  }
+
   const stats = summarize(bookings)
 
   return (
@@ -97,6 +107,16 @@ export default function ProviderDashboard(){
           <h2 className="text-2xl md:text-3xl font-bold truncate">Provider Dashboard</h2>
           <RealTimeClock className="text-xs text-gray-600 mt-1" />
         </div>
+        <button 
+          onClick={onToggleAvailability}
+          className={`btn text-sm whitespace-nowrap ${
+            user?.is_available === false 
+              ? 'bg-red-500 hover:bg-red-600 text-white' 
+              : 'bg-green-500 hover:bg-green-600 text-white'
+          }`}
+        >
+          {user?.is_available === false ? '🔴 Shop Closed - Click to Open' : '🟢 Shop Open - Click to Close'}
+        </button>
       </div>
       
       <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 md:mx-0 md:px-0">

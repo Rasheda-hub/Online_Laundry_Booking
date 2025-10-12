@@ -39,6 +39,7 @@ class UserPublic(BaseModel):
     shop_address: Optional[str] = None
     provider_status: Optional[ProviderStatus] = None
     banned: Optional[bool] = None
+    is_available: Optional[bool] = None  # For providers to mark shop open/closed
 
 class Token(BaseModel):
     access_token: str

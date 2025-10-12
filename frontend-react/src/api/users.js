@@ -20,3 +20,7 @@ export async function searchProviders(query){
   const qp = encodeURIComponent(query || '')
   return apiFetch(`/users/providers/search?q=${qp}`)
 }
+
+export async function toggleAvailability(token){
+  return apiFetch('/users/toggle_availability', { method: 'POST', token })
+}

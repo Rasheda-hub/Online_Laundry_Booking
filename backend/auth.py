@@ -96,7 +96,7 @@ def get_current_user(token: str = Depends(oauth2_scheme)) -> UserPublic:
         )
     with get_session() as session:
         rec = session.run(
-            "MATCH (u:User {id: $id}) RETURN u { .id, .role, .email, .contact_number, .full_name, .address, .shop_name, .shop_address, .provider_status, .banned } AS user",
+            "MATCH (u:User {id: $id}) RETURN u { .id, .role, .email, .contact_number, .full_name, .address, .shop_name, .shop_address, .provider_status, .banned, .is_available } AS user",
             id=user_id,
         ).single()
         if not rec:

@@ -51,7 +51,7 @@ def register_provider(payload: ProviderCreate):
             CREATE (u:User {
                 id: $id, role: $role, email: $email, contact_number: $contact_number,
                 shop_name: $shop_name, shop_address: $shop_address, hashed_password: $hashed_password,
-                provider_status: 'pending', banned: false
+                provider_status: 'pending', banned: false, is_available: true
             })
             RETURN u
             """,
@@ -85,7 +85,7 @@ def list_approved_providers():
             """
             MATCH (u:User {role: 'provider'})
             WHERE u.provider_status = 'approved'
-            RETURN u { .id, .email, .contact_number, .shop_name, .shop_address } AS provider
+            RETURN u { .id, .email, .contact_number, .shop_name, .shop_address, .is_available } AS provider
             ORDER BY u.shop_name
             """
         )
@@ -101,7 +101,7 @@ def search_providers(q: str = ""):
                 """
                 MATCH (u:User {role: 'provider'})
                 WHERE u.provider_status = 'approved'
-                RETURN u { .id, .email, .contact_number, .shop_name, .shop_address } AS provider
+                RETURN u { .id, .email, .contact_number, .shop_name, .shop_address, .is_available } AS provider
                 ORDER BY u.shop_name
                 """
             )
@@ -115,7 +115,7 @@ def search_providers(q: str = ""):
                 OR toLower(coalesce(u.shop_address,'')) CONTAINS toLower($q)
                 OR toLower(coalesce(u.email,'')) CONTAINS toLower($q)
               )
-            RETURN u { .id, .email, .contact_number, .shop_name, .shop_address } AS provider
+            RETURN u { .id, .email, .contact_number, .shop_name, .shop_address, .is_available } AS provider
             ORDER BY u.shop_name
             """,
             q=term,
@@ -146,7 +146,7 @@ def update_profile(payload: dict, current_user: UserPublic = Depends(get_current
             """
             MATCH (u:User {id: $id})
             SET u += $updates
-            RETURN u { .id, .role, .email, .contact_number, .full_name, .address, .shop_name, .shop_address, .provider_status, .banned } AS user
+            RETURN u { .id, .role, .email, .contact_number, .full_name, .address, .shop_name, .shop_address, .provider_status, .banned, .is_available } AS user
             """,
             id=current_user.id,
             updates=allowed,
@@ -166,3 +166,19 @@ def change_password(payload: ChangePasswordRequest, current_user: UserPublic = D
         new_hp = get_password_hash(payload.new_password)
         session.run("MATCH (u:User {id: $id}) SET u.hashed_password = $hp", id=current_user.id, hp=new_hp)
     return {"detail": "password_changed"}
+
+@router.post("/toggle_availability")
+def toggle_availability(current_user: UserPublic = Depends(get_current_user)):
+    """Provider endpoint to toggle shop availability (open/closed)"""
+    if current_user.role != UserRole.provider:
+        raise HTTPException(status_code=403, detail="Only providers can toggle availability")
+    with get_session() as session:
+        rec = session.run(
+            """
+            MATCH (u:User {id: $id})
+            SET u.is_available = NOT coalesce(u.is_available, true)
+            RETURN u.is_available AS is_available
+            """,
+            id=current_user.id
+        ).single()
+        return {"is_available": rec["is_available"] if rec else True}
