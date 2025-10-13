@@ -49,30 +49,33 @@ export default function CustomerDashboard(){
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {providers.map(p=> (
-            <button 
+            <div 
               key={p.id} 
-              onClick={()=>{setSelectedProvider(p.id); loadCategories(p.id)}} 
-              className={`p-3 rounded-xl text-left transition-all relative ${
-                selectedProvider===p.id 
-                  ? 'bg-gradient-to-br from-bubble-dark to-bubble-mid text-white shadow-lg scale-105' 
-                  : 'bg-white hover:shadow-md hover:scale-102'
-              } ${p.is_available === false ? 'opacity-60' : ''}`}
+              onClick={()=> nav(`/customer/shop/${p.id}`)}
+              className={`p-3 rounded-xl text-left transition-all cursor-pointer relative bg-white hover:shadow-lg hover:scale-102 ${
+                p.is_available === false ? 'opacity-60' : ''
+              }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold">{p.shop_name || p.email}</div>
-                  {p.shop_address && <div className="text-xs mt-1 opacity-80">📍 {p.shop_address}</div>}
-                  {p.contact_number && <div className="text-xs opacity-80">📞 {p.contact_number}</div>}
+                  <div className="font-semibold text-lg">{p.shop_name || p.email}</div>
+                  {p.shop_address && <div className="text-xs mt-1 text-gray-600">📍 {p.shop_address}</div>}
+                  {p.contact_number && <div className="text-xs text-gray-600">📞 {p.contact_number}</div>}
+                  <div className="mt-2">
+                    <span className="text-sm text-bubble-dark font-semibold">
+                      Browse Services →
+                    </span>
+                  </div>
                 </div>
                 <div className={`text-xs px-2 py-1 rounded-full whitespace-nowrap ${
                   p.is_available === false 
-                    ? selectedProvider===p.id ? 'bg-red-500/20 text-white' : 'bg-red-100 text-red-700'
-                    : selectedProvider===p.id ? 'bg-green-500/20 text-white' : 'bg-green-100 text-green-700'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-green-100 text-green-700'
                 }`}>
                   {p.is_available === false ? '🔴 Closed' : '🟢 Open'}
                 </div>
               </div>
-            </button>
+            </div>
           ))}
         </div>
       </div>

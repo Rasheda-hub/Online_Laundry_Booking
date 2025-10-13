@@ -31,5 +31,15 @@ class Settings(BaseModel):
     neo4j_database: str = os.getenv("NEO4J_DATABASE", "neo4j")
 
     cors_origins: List[str] = _get_list_env("CORS_ORIGINS", ["*"])
+    
+    # OAuth Settings
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    facebook_client_id: str = os.getenv("FACEBOOK_CLIENT_ID", "")
+    facebook_client_secret: str = os.getenv("FACEBOOK_CLIENT_SECRET", "")
+    
+    # URLs for OAuth redirects
+    backend_url: str = os.getenv("BACKEND_URL", "http://localhost:8000")
+    frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 settings = Settings()

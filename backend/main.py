@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
 from config import settings
 from db import close_driver, get_driver
 from auth import router as auth_router
@@ -13,11 +14,19 @@ from receipts import router as receipts_router
 from routes.admin import router as admin_router
 from routes.bookings import router as bookings_router
 from routes.categories import router as categories_router
+from oauth import router as oauth_router
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 app = FastAPI(title=settings.app_name)
+
+# Add SessionMiddleware for OAuth (must be added before other middleware)
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.jwt_secret,  # Use same secret as JWT
+    max_age=3600,  # Session expires after 1 hour
+)
 
 # CORS for local development (when running React dev server separately)
 app.add_middleware(
@@ -36,6 +45,7 @@ app.add_middleware(
 
 # Include your API routers
 app.include_router(auth_router)
+app.include_router(oauth_router)
 app.include_router(users_router)
 app.include_router(services_router)
 app.include_router(orders_router)
@@ -77,7 +87,7 @@ async def root():
 async def catch_all(path_name: str, request: Request):
     # Don't catch API routes - let them return proper 404 JSON
     # Check without leading slash since path_name doesn't include it
-    api_prefixes = ("auth", "users", "services", "orders", "receipts", "bookings", "admin", "categories", "notifications", "docs", "openapi.json", "static", "assets")
+    api_prefixes = ("auth", "oauth", "users", "services", "orders", "receipts", "bookings", "admin", "categories", "notifications", "docs", "openapi.json", "static", "assets")
     if any(path_name.startswith(prefix) or path_name == prefix for prefix in api_prefixes):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Not found")

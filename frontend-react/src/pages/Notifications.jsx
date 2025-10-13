@@ -5,11 +5,21 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { formatDateTime } from '../components/RealTimeClock.jsx'
 
 export default function Notifications() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const nav = useNavigate()
   const [items, setItems] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  
+  const getEmptyMessage = () => {
+    if (user?.role === 'admin') {
+      return 'System notifications will appear here'
+    } else if (user?.role === 'provider') {
+      return "You'll see notifications here when you receive new bookings or updates"
+    } else {
+      return "You'll see notifications here when there are updates to your orders"
+    }
+  }
 
   const load = useCallback(async () => {
     if (!token) return
@@ -60,7 +70,14 @@ export default function Notifications() {
     if (n.receipt_id) {
       nav(`/receipts?rid=${encodeURIComponent(n.receipt_id)}`)
     } else if (n.booking_id) {
-      nav('/customer/orders')
+      // Navigate based on user role
+      if (user?.role === 'provider') {
+        // For providers, go to provider dashboard bookings tab
+        nav('/provider?tab=bookings')
+      } else {
+        // For customers, go to orders page
+        nav('/customer/orders')
+      }
     }
   }
 
@@ -116,7 +133,7 @@ export default function Notifications() {
           <div className="text-6xl mb-4">🔔</div>
           <div className="text-xl font-semibold text-gray-700 mb-2">No notifications yet</div>
           <p className="text-sm text-gray-500">
-            You'll see notifications here when there are updates to your orders
+            {getEmptyMessage()}
           </p>
         </div>
       )}

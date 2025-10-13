@@ -77,6 +77,25 @@ def register_provider(payload: ProviderCreate):
 def get_profile(current_user: UserPublic = Depends(get_current_user)):
     return current_user
 
+@router.get("/{user_id}", response_model=UserPublic)
+def get_user_by_id(user_id: str, current_user: UserPublic = Depends(get_current_user)):
+    """Get user details by ID (for viewing provider info)"""
+    with get_session() as session:
+        result = session.run(
+            """
+            MATCH (u:User {id: $id})
+            RETURN u { .id, .role, .email, .contact_number, .full_name, .address, 
+                      .shop_name, .shop_address, .provider_status, .banned, .is_available } AS user
+            """,
+            id=user_id
+        ).single()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_data = result["user"]
+        return UserPublic(**user_data)
+
 # Public: list approved providers (id, shop_name, contact, shop_address)
 @router.get("/providers/approved")
 def list_approved_providers():

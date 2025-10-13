@@ -3,6 +3,7 @@ from zoneinfo import ZoneInfo
 from fastapi import APIRouter, Depends, HTTPException
 from models import (
     BookingCreate,
+    CartBookingCreate,
     BookingUpdateStatus,
     BookingPublic,
     BookingStatus,
@@ -98,7 +99,7 @@ def create_booking(payload: BookingCreate, current_user: UserPublic = Depends(ge
         if pricing_type == CategoryPricingType.per_kilo.value:
             total = price * weight
         else:
-            # fixed pricing: calculate based on weight ranges
+            # Fixed pricing: charge fixed price, multiply if weight exceeds max
             min_k = float(catd.get("min_kilo")) if catd.get("min_kilo") is not None else None
             max_k = float(catd.get("max_kilo")) if catd.get("max_kilo") is not None else None
             
@@ -106,14 +107,12 @@ def create_booking(payload: BookingCreate, current_user: UserPublic = Depends(ge
             if min_k is not None and weight < min_k:
                 raise HTTPException(status_code=400, detail=f"Weight must be at least {min_k} kg for this service")
             
-            # Calculate total: if weight exceeds max, add multiple fixed prices
+            # If weight exceeds max, multiply price by number of batches
             if max_k is not None and weight > max_k:
-                # Calculate how many "batches" are needed
                 import math
                 num_batches = math.ceil(weight / max_k)
                 total = price * num_batches
             else:
-                # Weight is within range, charge single fixed price
                 total = price
 
         bid = str(uuid.uuid4())
@@ -144,57 +143,38 @@ def create_booking(payload: BookingCreate, current_user: UserPublic = Depends(ge
             total=total,
         )
         
-        # Auto-generate Order and Receipt when booking is created
-        order_id = str(uuid.uuid4())
-        receipt_id = str(uuid.uuid4())
+        # Notify provider about new booking (receipt will be generated when provider accepts)
         session.run(
             """
             MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
             MATCH (b)-[:FOR_PROVIDER]->(p:User)
             MATCH (b)-[:OF_CATEGORY]->(cat:Category)
-            WITH b, c, p, cat
-            CREATE (o:Order {
-              id: $oid, status: 'pending', delivery_option: 'pickup', notes: coalesce(b.notes, ''),
-              total_cost: b.total_price, created_at: $now
-            })-[:PLACED_BY]->(c)
-            WITH o, p, b, c, cat
-            CREATE (o)-[:FOR_PROVIDER]->(p)
-            CREATE (o)-[:FROM_BOOKING]->(b)
-            CREATE (r:Receipt {
-              id: $rid, subtotal: b.total_price, delivery_fee: 0.0, total: b.total_price, created_at: $now
-            })-[:FOR_ORDER]->(o)
-            WITH r, o, p, b, c, cat
-            CREATE (r)-[:FOR_CUSTOMER]->(c)
-            CREATE (r)-[:FOR_PROVIDER]->(p)
-            WITH r, b, c, p, cat
-            // Notifications for both customer and provider
             CREATE (nc:Notification {
               id: randomUUID(), 
               type: 'booking_created', 
-              message: 'Your booking for ' + cat.name + ' has been submitted. Receipt generated.', 
+              message: 'Your booking for ' + cat.name + ' has been submitted. Waiting for provider confirmation.', 
               created_at: $now, 
               read: false, 
-              receipt_id: $rid,
               booking_id: $bid
             })-[:FOR_USER]->(c)
             CREATE (np:Notification {
               id: randomUUID(), 
               type: 'new_booking', 
-              message: 'New booking received for ' + cat.name + ' from ' + c.full_name, 
+              message: 'New booking received for ' + cat.name + ' from ' + c.full_name + '. Total: ₱' + toString(b.total_price), 
               created_at: $now, 
               read: false, 
-              receipt_id: $rid,
               booking_id: $bid
             })-[:FOR_USER]->(p)
             """,
             bid=bid,
-            oid=order_id,
-            rid=receipt_id,
             now=now,
         )
         
         data = _booking_to_public(session, bid)
     return data  # type: ignore
+
+
+# Removed cart endpoint - using direct booking only
 
 
 @router.get("/mine", response_model=list[BookingPublic])
@@ -233,7 +213,7 @@ def list_my_bookings(current_user: UserPublic = Depends(get_current_user)):
 
 @router.post("/{booking_id}/accept", response_model=BookingPublic)
 def accept_booking(booking_id: str, current_user: UserPublic = Depends(get_current_user)):
-    """Provider accepts a pending booking, changes status to 'confirmed' and notifies customer"""
+    """Provider accepts a pending booking, changes status to 'confirmed', generates receipt, and notifies customer"""
     if current_user.role != UserRole.provider:
         raise HTTPException(status_code=403, detail="Only providers can accept bookings")
     with get_session() as session:
@@ -255,23 +235,60 @@ def accept_booking(booking_id: str, current_user: UserPublic = Depends(get_curre
             pid=current_user.id,
         )
         
-        # Notify customer that booking is accepted
+        # Generate receipt now that booking is accepted
         now = get_ph_now().isoformat()
+        receipt_id = str(uuid.uuid4())
+        order_id = str(uuid.uuid4())
+        
+        session.run(
+            """
+            MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
+            MATCH (b)-[:FOR_PROVIDER]->(p:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            CREATE (o:Order {id: $oid, status: 'confirmed', created_at: $now})-[:FROM_BOOKING]->(b)
+            CREATE (r:Receipt {
+              id: $rid, 
+              subtotal: b.total_price, 
+              delivery_fee: 0.0, 
+              total: b.total_price, 
+              created_at: $now
+            })-[:FOR_ORDER]->(o)
+            CREATE (r)-[:FOR_CUSTOMER]->(c)
+            CREATE (r)-[:FOR_PROVIDER]->(p)
+            """,
+            bid=booking_id,
+            oid=order_id,
+            rid=receipt_id,
+            now=now,
+        )
+        
+        # Notify both customer and provider about the acceptance and receipt
         session.run(
             """
             MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
             MATCH (b)-[:OF_CATEGORY]->(cat:Category)
             MATCH (b)-[:FOR_PROVIDER]->(p:User)
-            CREATE (n:Notification {
+            CREATE (nc:Notification {
               id: randomUUID(),
               type: 'booking_accepted',
-              message: 'Your booking for ' + cat.name + ' has been accepted by ' + p.shop_name + '. Please pay and deliver your laundry to proceed.',
+              message: 'Your booking for ' + cat.name + ' has been accepted by ' + p.shop_name + '. Receipt generated. Please pay ₱' + toString(b.total_price) + ' in cash when you deliver your laundry.',
               created_at: $now,
               read: false,
-              booking_id: $bid
+              booking_id: $bid,
+              receipt_id: $rid
             })-[:FOR_USER]->(c)
+            CREATE (np:Notification {
+              id: randomUUID(),
+              type: 'receipt_generated',
+              message: 'Receipt generated for ' + cat.name + ' booking from ' + c.full_name + '. Amount: ₱' + toString(b.total_price) + '. Waiting for customer payment and delivery.',
+              created_at: $now,
+              read: false,
+              booking_id: $bid,
+              receipt_id: $rid
+            })-[:FOR_USER]->(p)
             """,
             bid=booking_id,
+            rid=receipt_id,
             now=now,
         )
         

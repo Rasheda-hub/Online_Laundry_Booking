@@ -145,6 +145,16 @@ class BookingCreate(BaseModel):
     schedule_at: Optional[datetime] = None
     notes: Optional[str] = None
 
+class CartItem(BaseModel):
+    category_id: str
+    weight_kg: float = Field(..., gt=0)
+
+class CartBookingCreate(BaseModel):
+    provider_id: str
+    items: List[CartItem]
+    schedule_at: Optional[datetime] = None
+    notes: Optional[str] = None
+
 class BookingUpdateStatus(BaseModel):
     status: BookingStatus
 
@@ -157,6 +167,26 @@ class BookingPublic(BaseModel):
     pricing_type: CategoryPricingType
     weight_kg: float
     total_price: float
+    schedule_at: datetime
+    status: BookingStatus
+    notes: Optional[str] = None
+    created_at: datetime
+
+class BookingLineItem(BaseModel):
+    category_id: str
+    category_name: str
+    pricing_type: CategoryPricingType
+    weight_kg: float
+    price_per_unit: float
+    subtotal: float
+
+class GroupedBookingPublic(BaseModel):
+    id: str
+    customer_id: str
+    provider_id: str
+    provider_name: Optional[str] = None
+    items: List[BookingLineItem]
+    total_amount: float
     schedule_at: datetime
     status: BookingStatus
     notes: Optional[str] = None

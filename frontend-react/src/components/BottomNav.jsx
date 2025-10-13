@@ -83,7 +83,6 @@ export default function BottomNav(){
       {user.role === 'admin' && (
         <>
           <Item to="/admin" label="Admin" emoji="🛠️" />
-          <Item to="/notifications" label="Notifications" emoji="🔔" badge={unreadCount} />
           <Item to="/profile" label="Profile" emoji="👤" />
           <LogoutButton />
         </>

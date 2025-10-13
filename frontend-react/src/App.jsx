@@ -2,7 +2,9 @@ import React, { useState } from 'react'
 import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
+import OAuthCallback from './pages/OAuthCallback.jsx'
 import CustomerDashboard from './pages/customer/Dashboard.jsx'
+import ProviderShop from './pages/customer/ProviderShop.jsx'
 import BookingForm from './pages/customer/BookingForm.jsx'
 import Orders from './pages/customer/Orders.jsx'
 import ProviderDashboard from './pages/provider/Dashboard.jsx'
@@ -76,8 +78,10 @@ export default function App() {
         <Route path="/" element={<Layout><Home /></Layout>} />
         <Route path="/login" element={<Layout><Login /></Layout>} />
         <Route path="/register" element={<Layout><Register /></Layout>} />
+        <Route path="/oauth/callback" element={<Layout><OAuthCallback /></Layout>} />
         {/* Customer */}
         <Route path="/customer" element={<Layout><ProtectedRoute allow={["customer","admin"]}><CustomerDashboard /></ProtectedRoute></Layout>} />
+        <Route path="/customer/shop/:providerId" element={<Layout><ProtectedRoute allow={["customer","admin"]}><ProviderShop /></ProtectedRoute></Layout>} />
         <Route path="/customer/book" element={<Layout><ProtectedRoute allow={["customer","admin"]}><BookingForm /></ProtectedRoute></Layout>} />
         <Route path="/customer/orders" element={<Layout><ProtectedRoute allow={["customer","admin"]}><Orders /></ProtectedRoute></Layout>} />
         {/* Provider */}

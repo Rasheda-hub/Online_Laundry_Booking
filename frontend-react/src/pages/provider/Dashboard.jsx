@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { listMyCategories, createCategory, updateCategory, deleteCategory } from '../../api/categories.js'
 import { listMyBookings, acceptBooking, rejectBooking, updateBookingStatus, confirmPayment } from '../../api/bookings.js'
@@ -7,6 +8,7 @@ import RealTimeClock, { formatDateTime } from '../../components/RealTimeClock.js
 
 export default function ProviderDashboard(){
   const { user, token } = useAuth()
+  const [searchParams] = useSearchParams()
   const [tab, setTab] = useState('summary')
   const [error, setError] = useState('')
 
@@ -32,6 +34,14 @@ export default function ProviderDashboard(){
   }
 
   useEffect(()=>{ refreshAll() }, [token])
+
+  // Check if we should open bookings tab from URL parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'bookings') {
+      setTab('bookings')
+    }
+  }, [searchParams])
 
   async function saveCategory(e){
     e.preventDefault()
