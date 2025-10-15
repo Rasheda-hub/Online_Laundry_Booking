@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { loginJson } from '../api/auth.js'
 import PasswordInput from '../components/PasswordInput.jsx'
+import Logo from '../components/Logo.jsx'
 
 export default function Login(){
   const { setToken, setUser, user } = useAuth()
@@ -36,8 +37,8 @@ export default function Login(){
     <div className="max-w-md mx-auto">
       <div className="card">
         <div className="text-center mb-6">
-          <div className="inline-flex h-16 w-16 rounded-full bg-gradient-to-br from-bubble-dark to-bubble-mid items-center justify-center text-4xl shadow-lg mb-3">
-            🧺
+          <div className="mb-3">
+            <Logo size="xl" className="mx-auto" />
           </div>
           <h2 className="text-2xl md:text-3xl font-bold">Welcome Back!</h2>
           <p className="text-sm text-gray-600 mt-1">Sign in to continue</p>

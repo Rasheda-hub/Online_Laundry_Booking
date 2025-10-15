@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import Avatar from './components/Avatar.jsx'
 import BottomNav from './components/BottomNav.jsx'
 import Bubbles from './components/Bubbles.jsx'
+import Logo from './components/Logo.jsx'
 
 function ProtectedRoute({ children, allow }) {
   const { user, token, loading } = useAuth()
@@ -40,12 +41,12 @@ function Layout({ children }) {
           {/* Brand */}
           {user ? (
             <div className="flex items-center gap-2 text-lg md:text-xl font-semibold select-none cursor-default">
-              <span className="inline-flex h-8 w-8 rounded-full bg-gradient-to-br from-bubble-dark to-bubble-mid items-center justify-center shadow-sm">🧺</span>
+              <Logo size="md" />
               <span className="hidden sm:inline">LaundryApp</span>
             </div>
           ) : (
             <Link to="/" className="flex items-center gap-2 text-lg md:text-xl font-semibold hover:opacity-80 transition-opacity">
-              <span className="inline-flex h-8 w-8 rounded-full bg-gradient-to-br from-bubble-dark to-bubble-mid items-center justify-center shadow-sm">🧺</span>
+              <Logo size="md" />
               <span className="hidden sm:inline">LaundryApp</span>
             </Link>
           )}
