@@ -24,10 +24,10 @@ export default function Orders(){
   if (error) return <div className="text-sm text-red-600">{error}</div>
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl md:text-3xl font-bold">My Orders</h2>
-        <button onClick={() => nav('/receipts')} className="btn-white text-sm">
+    <div className="space-y-4 px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">My Orders</h2>
+        <button onClick={() => nav('/receipts')} className="btn-white text-xs sm:text-sm whitespace-nowrap">
           🧾 View Receipts
         </button>
       </div>
@@ -44,52 +44,52 @@ export default function Orders(){
       
       <div className="grid gap-3">
         {orders.map(o => (
-          <div key={o.id} className="card hover:shadow-lg transition-shadow">
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <div className="font-semibold text-lg">{o.category_name}</div>
+          <div key={o.id} className="card hover:shadow-lg transition-shadow overflow-hidden">
+            <div className="flex items-start justify-between mb-2 gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold text-base sm:text-lg truncate">{o.category_name}</div>
                 <div className="text-xs text-gray-500">Order #{o.id.slice(0,8)}</div>
               </div>
-              <div className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor(o.status)}`}>
+              <div className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${statusColor(o.status)}`}>
                 {formatStatus(o.status)}
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-              <div className="bg-gray-50 p-2 rounded">
+              <div className="bg-gray-50 p-2 rounded min-w-0">
                 <div className="text-xs text-gray-500">Weight</div>
-                <div className="font-semibold">{o.weight_kg} kg</div>
+                <div className="font-semibold truncate">{o.weight_kg} kg</div>
               </div>
-              <div className="bg-gray-50 p-2 rounded">
+              <div className="bg-gray-50 p-2 rounded min-w-0">
                 <div className="text-xs text-gray-500">Total</div>
-                <div className="font-semibold text-bubble-dark">₱{o.total_price}</div>
+                <div className="font-semibold text-bubble-dark truncate">₱{o.total_price}</div>
               </div>
             </div>
             
-            <div className="text-xs text-gray-600 mb-3">
+            <div className="text-xs text-gray-600 mb-3 break-words">
               📅 {formatDateTime(o.schedule_at)}
             </div>
             
             {o.status === 'pending' && (
-              <div className="bg-yellow-50 text-yellow-800 text-xs p-2 rounded">
+              <div className="bg-yellow-50 text-yellow-800 text-xs p-2 rounded break-words">
                 ⏳ Waiting for provider to accept your booking
               </div>
             )}
             
             {o.status === 'confirmed' && (
-              <div className="bg-green-50 text-green-800 text-xs p-2 rounded">
+              <div className="bg-green-50 text-green-800 text-xs p-2 rounded break-words">
                 ✅ Booking accepted! Please pay and deliver your laundry to the shop.
               </div>
             )}
             
             {o.status === 'in_progress' && (
-              <div className="bg-blue-50 text-blue-800 text-xs p-2 rounded">
+              <div className="bg-blue-50 text-blue-800 text-xs p-2 rounded break-words">
                 🌀 Your laundry is being processed
               </div>
             )}
             
             {o.status === 'ready' && (
-              <div className="bg-purple-50 text-purple-800 text-xs p-2 rounded">
+              <div className="bg-purple-50 text-purple-800 text-xs p-2 rounded break-words">
                 📦 Your laundry is ready for pickup!
               </div>
             )}
@@ -104,7 +104,7 @@ export default function Orders(){
             )}
             
             {o.status === 'rejected' && (
-              <div className="bg-red-50 text-red-800 text-xs p-2 rounded">
+              <div className="bg-red-50 text-red-800 text-xs p-2 rounded break-words">
                 ❌ This booking was rejected by the provider
               </div>
             )}
