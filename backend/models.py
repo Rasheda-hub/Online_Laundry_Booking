@@ -158,6 +158,10 @@ class CartBookingCreate(BaseModel):
 class BookingUpdateStatus(BaseModel):
     status: BookingStatus
 
+class BookingUpdateDetails(BaseModel):
+    weight_kg: Optional[float] = Field(None, gt=0)
+    notes: Optional[str] = None
+
 class BookingPublic(BaseModel):
     id: str
     customer_id: str

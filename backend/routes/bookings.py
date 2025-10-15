@@ -5,6 +5,7 @@ from models import (
     BookingCreate,
     CartBookingCreate,
     BookingUpdateStatus,
+    BookingUpdateDetails,
     BookingPublic,
     BookingStatus,
     CategoryPricingType,
@@ -460,4 +461,123 @@ def update_status(booking_id: str, payload: BookingUpdateStatus, current_user: U
                 """,
                 bid=booking_id,
             )
+        return BookingPublic(**_booking_to_public(session, booking_id))
+
+
+@router.patch("/{booking_id}/details", response_model=BookingPublic)
+def update_booking_details(booking_id: str, payload: BookingUpdateDetails, current_user: UserPublic = Depends(get_current_user)):
+    """Provider updates booking details (weight, notes) and recalculates total price. Notifies customer."""
+    if current_user.role != UserRole.provider:
+        raise HTTPException(status_code=403, detail="Only providers can update booking details")
+    
+    with get_session() as session:
+        # Check booking exists and belongs to provider
+        check = session.run(
+            """
+            MATCH (b:Booking {id: $id})-[:FOR_PROVIDER]->(p:User {id: $pid})
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            RETURN b.status AS status, b.weight_kg AS old_weight, b.total_price AS old_total,
+                   cat.pricing_type AS pricing_type, cat.price AS price, 
+                   cat.min_kilo AS min_kilo, cat.max_kilo AS max_kilo
+            """,
+            id=booking_id,
+            pid=current_user.id,
+        ).single()
+        
+        if not check:
+            raise HTTPException(status_code=404, detail="Booking not found or not for this provider")
+        
+        # Don't allow editing completed or rejected bookings
+        if check["status"] in [BookingStatus.completed.value, BookingStatus.rejected.value]:
+            raise HTTPException(status_code=400, detail="Cannot edit completed or rejected bookings")
+        
+        # Prepare update fields
+        updates = {}
+        notification_parts = []
+        
+        # Update weight and recalculate total if weight changed
+        if payload.weight_kg is not None:
+            old_weight = float(check["old_weight"])
+            new_weight = float(payload.weight_kg)
+            
+            if new_weight != old_weight:
+                pricing_type = check["pricing_type"]
+                price = float(check["price"])
+                
+                # Recalculate total based on pricing type
+                if pricing_type == CategoryPricingType.per_kilo.value:
+                    new_total = price * new_weight
+                else:
+                    # Fixed pricing
+                    min_k = float(check["min_kilo"]) if check["min_kilo"] is not None else None
+                    max_k = float(check["max_kilo"]) if check["max_kilo"] is not None else None
+                    
+                    if min_k is not None and new_weight < min_k:
+                        raise HTTPException(status_code=400, detail=f"Weight must be at least {min_k} kg for this service")
+                    
+                    if max_k is not None and new_weight > max_k:
+                        import math
+                        num_batches = math.ceil(new_weight / max_k)
+                        new_total = price * num_batches
+                    else:
+                        new_total = price
+                
+                updates["weight_kg"] = new_weight
+                updates["total_price"] = new_total
+                notification_parts.append(f"Weight updated from {old_weight} kg to {new_weight} kg. New total: ₱{new_total:.2f}")
+        
+        # Update notes if provided
+        if payload.notes is not None:
+            updates["notes"] = payload.notes
+            notification_parts.append(f"Notes updated: {payload.notes}")
+        
+        if not updates:
+            raise HTTPException(status_code=400, detail="No updates provided")
+        
+        # Build SET clause dynamically
+        set_clauses = [f"b.{key} = ${key}" for key in updates.keys()]
+        set_query = ", ".join(set_clauses)
+        
+        # Update the booking
+        session.run(
+            f"MATCH (b:Booking {{id: $id}})-[:FOR_PROVIDER]->(p:User {{id: $pid}}) SET {set_query} RETURN b",
+            id=booking_id,
+            pid=current_user.id,
+            **updates
+        )
+        
+        # Notify customer about the changes
+        now = get_ph_now().isoformat()
+        notification_message = "Provider updated your booking details: " + "; ".join(notification_parts)
+        
+        session.run(
+            """
+            MATCH (b:Booking {id: $bid})-[:BY_CUSTOMER]->(c:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            MATCH (b)-[:FOR_PROVIDER]->(p:User)
+            CREATE (n:Notification {
+              id: randomUUID(),
+              type: 'booking_updated',
+              message: $message,
+              created_at: $now,
+              read: false,
+              booking_id: $bid
+            })-[:FOR_USER]->(c)
+            """,
+            bid=booking_id,
+            message=notification_message,
+            now=now,
+        )
+        
+        # Update receipt if it exists (for confirmed+ bookings)
+        if "total_price" in updates:
+            session.run(
+                """
+                MATCH (b:Booking {id: $bid})<-[:FROM_BOOKING]-(o:Order)<-[:FOR_ORDER]-(r:Receipt)
+                SET r.subtotal = $new_total, r.total = $new_total
+                """,
+                bid=booking_id,
+                new_total=updates["total_price"],
+            )
+        
         return BookingPublic(**_booking_to_public(session, booking_id))

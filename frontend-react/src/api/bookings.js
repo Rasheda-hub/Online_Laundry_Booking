@@ -23,3 +23,7 @@ export async function updateBookingStatus(token, id, status){
 export async function confirmPayment(token, id){
   return apiFetch(`/bookings/${id}/confirm-payment`, { method: 'POST', token })
 }
+
+export async function updateBookingDetails(token, id, details){
+  return apiFetch(`/bookings/${id}/details`, { method: 'PATCH', token, json: details })
+}

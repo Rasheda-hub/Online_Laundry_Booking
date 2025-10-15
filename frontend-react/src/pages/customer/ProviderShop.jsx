@@ -138,37 +138,35 @@ export default function ProviderShop() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto px-2 sm:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <Link to="/customer" className="btn-secondary">
-          ← Back to Providers
+      <div className="flex items-center justify-between gap-2 mb-6">
+        <Link to="/customer" className="btn-secondary text-xs sm:text-sm whitespace-nowrap">
+          ← Back
         </Link>
         
-        <Link to="/customer/orders" className="btn-primary">
-          📋 My Orders
+        <Link to="/customer/orders" className="btn-primary text-xs sm:text-sm whitespace-nowrap">
+          📋 Orders
         </Link>
       </div>
 
       {/* Shop Header */}
-      <div className="card mb-6">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl md:text-3xl font-bold">{provider.shop_name}</h1>
-              {provider.is_available ? (
-                <span className="px-3 py-1 bg-green-100 text-green-700 text-sm font-semibold rounded-full">
-                  🟢 Open
-                </span>
-              ) : (
-                <span className="px-3 py-1 bg-red-100 text-red-700 text-sm font-semibold rounded-full">
-                  🔴 Closed
-                </span>
-              )}
-            </div>
-            <p className="text-gray-600 mb-1">📍 {provider.shop_address}</p>
-            <p className="text-gray-600">📞 {provider.contact_number}</p>
+      <div className="card mb-6 overflow-hidden">
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start justify-between gap-2 min-w-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate flex-1 min-w-0">{provider.shop_name}</h1>
+            {provider.is_available ? (
+              <span className="px-2 sm:px-3 py-1 bg-green-100 text-green-700 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap flex-shrink-0">
+                🟢 Open
+              </span>
+            ) : (
+              <span className="px-2 sm:px-3 py-1 bg-red-100 text-red-700 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap flex-shrink-0">
+                🔴 Closed
+              </span>
+            )}
           </div>
+          <p className="text-sm sm:text-base text-gray-600 break-words">📍 {provider.shop_address}</p>
+          <p className="text-sm sm:text-base text-gray-600 break-words">📞 {provider.contact_number}</p>
         </div>
       </div>
 
@@ -182,7 +180,7 @@ export default function ProviderShop() {
 
       {/* Services/Categories */}
       <div className="mb-6">
-        <h2 className="text-xl font-bold mb-4">🧺 Available Services</h2>
+        <h2 className="text-lg sm:text-xl font-bold mb-4">🧺 Available Services</h2>
         
         {categories.length === 0 ? (
           <div className="card text-center text-gray-500">
@@ -209,11 +207,11 @@ export default function ProviderShop() {
               }
 
               return (
-                <div key={category.id} className="card hover:shadow-lg transition-shadow">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div key={category.id} className="card hover:shadow-lg transition-shadow overflow-hidden">
+                  <div className="flex flex-col gap-4">
                     {/* Service Info */}
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold mb-1">{category.name}</h3>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-bold mb-1 truncate">{category.name}</h3>
                       <p className="text-gray-600 text-sm mb-2">
                         {category.pricing_type === 'per_kilo' 
                           ? `₱${category.price.toFixed(2)} per kilo`
@@ -221,7 +219,7 @@ export default function ProviderShop() {
                         }
                       </p>
                       {(category.min_kilo || category.max_kilo) && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-500 break-words">
                           {category.min_kilo && `Min: ${category.min_kilo}kg`}
                           {category.min_kilo && category.max_kilo && ' • '}
                           {category.max_kilo && category.pricing_type === 'fixed' 
@@ -233,11 +231,11 @@ export default function ProviderShop() {
                     </div>
 
                     {/* Booking Form */}
-                    <div className="w-full md:w-auto">
+                    <div className="w-full">
                       <div className="flex flex-col gap-3">
                         {/* Weight Input */}
                         <div className="flex items-center gap-2">
-                          <label className="text-sm font-medium">Weight:</label>
+                          <label className="text-xs sm:text-sm font-medium whitespace-nowrap">Weight:</label>
                           <input
                             type="text"
                             inputMode="decimal"
@@ -249,10 +247,10 @@ export default function ProviderShop() {
                                 handleWeightChange(category.id, val)
                               }
                             }}
-                            className="input w-24 text-center"
+                            className="input w-20 sm:w-24 text-center text-sm"
                             placeholder="0"
                           />
-                          <span className="text-sm text-gray-600">kg</span>
+                          <span className="text-xs sm:text-sm text-gray-600">kg</span>
                         </div>
 
                         {/* Notes Input */}
@@ -260,19 +258,19 @@ export default function ProviderShop() {
                           value={notes[category.id] || ''}
                           onChange={(e) => handleNotesChange(category.id, e.target.value)}
                           placeholder="Special instructions (optional)"
-                          className="input text-sm min-h-[60px]"
+                          className="input text-xs sm:text-sm min-h-[60px] w-full"
                           rows="2"
                         />
 
                         {/* Price & Book Button */}
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-xl font-bold text-bubble-dark">
+                        <div className="flex items-center justify-between gap-2 sm:gap-3">
+                          <p className="text-lg sm:text-xl font-bold text-bubble-dark truncate">
                             ₱{price.toFixed(2)}
                           </p>
                           <button
                             onClick={() => handleBookNow(category)}
                             disabled={booking === category.id || !provider.is_available}
-                            className={`btn-primary ${
+                            className={`btn-primary text-xs sm:text-sm whitespace-nowrap ${
                               booking === category.id ? 'opacity-50' : ''
                             } ${!provider.is_available ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { listMyCategories, createCategory, updateCategory, deleteCategory } from '../../api/categories.js'
-import { listMyBookings, acceptBooking, rejectBooking, updateBookingStatus, confirmPayment } from '../../api/bookings.js'
+import { listMyBookings, acceptBooking, rejectBooking, updateBookingStatus, confirmPayment, updateBookingDetails } from '../../api/bookings.js'
 import { toggleAvailability } from '../../api/users.js'
 import RealTimeClock, { formatDateTime } from '../../components/RealTimeClock.jsx'
 
@@ -20,6 +20,8 @@ export default function ProviderDashboard(){
 
   // Bookings
   const [bookings, setBookings] = useState([])
+  const [editingBooking, setEditingBooking] = useState(null)
+  const [editForm, setEditForm] = useState({ weight_kg: '', notes: '' })
 
   async function refreshAll(){
     setError('')
@@ -99,6 +101,32 @@ export default function ProviderDashboard(){
     try { await confirmPayment(token, id); refreshAll() } catch(e){ setError(e.message) }
   }
 
+  function startEditBooking(booking){
+    setEditingBooking(booking.id)
+    setEditForm({
+      weight_kg: String(booking.weight_kg),
+      notes: booking.notes || ''
+    })
+  }
+
+  function cancelEditBooking(){
+    setEditingBooking(null)
+    setEditForm({ weight_kg: '', notes: '' })
+  }
+
+  async function saveBookingEdit(e){
+    e.preventDefault()
+    setError('')
+    try {
+      const payload = {}
+      if (editForm.weight_kg) payload.weight_kg = parseFloat(editForm.weight_kg)
+      if (editForm.notes !== undefined) payload.notes = editForm.notes
+      await updateBookingDetails(token, editingBooking, payload)
+      cancelEditBooking()
+      refreshAll()
+    } catch(e){ setError(e.message) }
+  }
+
   async function onToggleAvailability(){
     setError('')
     try { 
@@ -139,9 +167,10 @@ export default function ProviderDashboard(){
 
       {tab === 'summary' && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-          <StatCard title="Total" value={stats.total} emoji="📦" color="bg-gradient-to-br from-blue-100 to-blue-50" />
+          <StatCard title="Total" value={stats.total} emoji="📊" color="bg-gradient-to-br from-blue-100 to-blue-50" />
           <StatCard title="Pending" value={stats.pending} emoji="⏳" color="bg-gradient-to-br from-yellow-100 to-yellow-50" />
           <StatCard title="In Progress" value={stats.in_progress} emoji="🌀" color="bg-gradient-to-br from-purple-100 to-purple-50" />
+          <StatCard title="Ready for Pickup" value={stats.ready} emoji="📦" color="bg-gradient-to-br from-orange-100 to-orange-50" />
           <StatCard title="Completed" value={stats.completed} emoji="✅" color="bg-gradient-to-br from-green-100 to-green-50" />
         </div>
       )}
@@ -248,6 +277,57 @@ export default function ProviderDashboard(){
               <div className="text-xs text-gray-600 mb-3 break-words">
                 📅 {formatDateTime(b.schedule_at)}
               </div>
+
+              {b.notes && (
+                <div className="text-xs text-gray-600 mb-3 bg-gray-50 p-2 rounded break-words">
+                  📝 Notes: {b.notes}
+                </div>
+              )}
+
+              {/* Edit Form */}
+              {editingBooking === b.id && (
+                <form onSubmit={saveBookingEdit} className="bg-blue-50 p-3 rounded-lg mb-3 space-y-2">
+                  <div className="font-medium text-sm text-blue-900 mb-2">✏️ Edit Booking Details</div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Weight (kg)</label>
+                    <input 
+                      type="number" 
+                      step="0.1" 
+                      min="0.1"
+                      value={editForm.weight_kg} 
+                      onChange={e=>setEditForm({...editForm, weight_kg:e.target.value})} 
+                      className="input text-sm"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1">Notes</label>
+                    <textarea 
+                      value={editForm.notes} 
+                      onChange={e=>setEditForm({...editForm, notes:e.target.value})} 
+                      className="input text-sm min-h-[60px]"
+                      placeholder="Add notes..."
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="submit" className="btn-primary flex-1 text-xs">💾 Save Changes</button>
+                    <button type="button" onClick={cancelEditBooking} className="btn-white flex-1 text-xs">❌ Cancel</button>
+                  </div>
+                  <div className="text-[10px] text-blue-700 mt-1">
+                    ℹ️ Customer will be notified of any changes
+                  </div>
+                </form>
+              )}
+
+              {/* Edit Button - Show for non-completed/rejected bookings */}
+              {!editingBooking && b.status !== 'completed' && b.status !== 'rejected' && (
+                <button 
+                  onClick={() => startEditBooking(b)}
+                  className="btn-white text-xs w-full mb-2"
+                >
+                  ✏️ Edit Booking Details
+                </button>
+              )}
               
               <div className="flex flex-col gap-2 min-w-0">
                 {b.status === 'pending' && (
@@ -354,7 +434,7 @@ function getStatusLabel(s) {
 }
 
 function summarize(items){
-  const s = { total: items.length, pending:0, in_progress:0, completed:0 }
+  const s = { total: items.length, pending:0, in_progress:0, ready:0, completed:0 }
   items.forEach(b=>{ if (s[b.status] !== undefined) s[b.status]++ })
   return s
 }
