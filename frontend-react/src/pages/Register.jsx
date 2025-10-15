@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { registerCustomer, registerProvider } from '../api/users.js'
 import { useAuth } from '../context/AuthContext.jsx'
+import AddressAutocomplete from '../components/AddressAutocomplete.jsx'
+import PasswordInput from '../components/PasswordInput.jsx'
 
 export default function Register(){
   const nav = useNavigate()
@@ -110,7 +112,12 @@ export default function Register(){
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">🔒 Password *</label>
-                <input type="password" value={cPassword} onChange={e=>setCPassword(e.target.value)} placeholder="Create a password" className="input" required />
+                <PasswordInput 
+                  value={cPassword} 
+                  onChange={e=>setCPassword(e.target.value)} 
+                  placeholder="Create a password" 
+                  required 
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">📞 Contact Number *</label>
@@ -118,7 +125,13 @@ export default function Register(){
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2">📍 Address *</label>
-                <input value={cAddress} onChange={e=>setCAddress(e.target.value)} placeholder="Complete address" className="input" required />
+                <AddressAutocomplete 
+                  value={cAddress} 
+                  onChange={setCAddress} 
+                  placeholder="Start typing your address..." 
+                  required 
+                />
+                <p className="text-xs text-gray-500 mt-1">💡 Type at least 3 characters to search for addresses</p>
               </div>
             </>
           ) : (
@@ -133,7 +146,12 @@ export default function Register(){
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">🔒 Password *</label>
-                <input type="password" value={pPassword} onChange={e=>setPPassword(e.target.value)} placeholder="Create a password" className="input" required />
+                <PasswordInput 
+                  value={pPassword} 
+                  onChange={e=>setPPassword(e.target.value)} 
+                  placeholder="Create a password" 
+                  required 
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-2">📞 Contact Number *</label>
@@ -141,7 +159,13 @@ export default function Register(){
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2">📍 Shop Address *</label>
-                <input value={pShopAddress} onChange={e=>setPShopAddress(e.target.value)} placeholder="Complete shop address" className="input" required />
+                <AddressAutocomplete 
+                  value={pShopAddress} 
+                  onChange={setPShopAddress} 
+                  placeholder="Start typing your shop address..." 
+                  required 
+                />
+                <p className="text-xs text-gray-500 mt-1">💡 Type at least 3 characters to search for addresses</p>
               </div>
             </>
           )}

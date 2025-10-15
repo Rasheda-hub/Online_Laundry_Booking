@@ -14,6 +14,7 @@ from receipts import router as receipts_router
 from routes.admin import router as admin_router
 from routes.bookings import router as bookings_router
 from routes.categories import router as categories_router
+from routes.places import router as places_router
 from oauth import router as oauth_router
 from dotenv import load_dotenv
 import os
@@ -54,6 +55,7 @@ app.include_router(bookings_router)
 app.include_router(admin_router)
 app.include_router(categories_router)
 app.include_router(notifications_router)
+app.include_router(places_router)
 
 # Serve static files (React build)
 try:

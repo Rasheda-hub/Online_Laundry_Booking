@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext.jsx'
 import { loginJson } from '../api/auth.js'
+import PasswordInput from '../components/PasswordInput.jsx'
 
 export default function Login(){
   const { setToken, setUser, user } = useAuth()
@@ -63,12 +64,10 @@ export default function Login(){
           
           <div>
             <label className="block text-sm font-medium mb-2">🔒 Password</label>
-            <input 
-              type="password" 
+            <PasswordInput 
               value={password} 
               onChange={e=>setPassword(e.target.value)} 
               placeholder="Enter your password" 
-              className="input" 
               required 
             />
           </div>
