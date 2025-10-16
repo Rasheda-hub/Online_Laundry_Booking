@@ -14,7 +14,12 @@ export default function NotificationsBell(){
       const res = await listMyNotifications(token)
       setItems(res)
     } catch(e) { 
-      // Silently fail for badge
+      // If unauthorized, stop trying
+      if (e.message?.includes('401') || e.message?.includes('Unauthorized')) {
+        console.log('Token expired, stopping notification polling')
+        return
+      }
+      // Silently fail for other errors
     }
   }, [token])
 
@@ -25,12 +30,14 @@ export default function NotificationsBell(){
 
   // Auto-refresh notifications every 10 seconds
   useEffect(() => {
+    if (!token) return // Don't poll if no token
+    
     const interval = setInterval(() => {
       load()
     }, 10000) // Poll every 10 seconds
     
     return () => clearInterval(interval)
-  }, [load])
+  }, [load, token])
 
   const unread = items.filter(n=>!n.read).length
 

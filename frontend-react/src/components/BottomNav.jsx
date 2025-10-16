@@ -18,6 +18,12 @@ export default function BottomNav(){
         const unread = notifications.filter(n => !n.read).length
         setUnreadCount(unread)
       } catch (e) {
+        // If unauthorized, stop polling
+        if (e.message?.includes('401') || e.message?.includes('Unauthorized')) {
+          console.log('Token expired, stopping notification polling in BottomNav')
+          setUnreadCount(0)
+          return
+        }
         console.error('Failed to fetch notifications:', e)
       }
     }
