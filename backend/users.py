@@ -99,16 +99,30 @@ def get_user_by_id(user_id: str, current_user: UserPublic = Depends(get_current_
 # Public: list approved providers (id, shop_name, contact, shop_address)
 @router.get("/providers/approved")
 def list_approved_providers():
-    with get_session() as session:
-        result = session.run(
-            """
-            MATCH (u:User {role: 'provider'})
-            WHERE u.provider_status = 'approved'
-            RETURN u { .id, .email, .contact_number, .shop_name, .shop_address, .is_available } AS provider
-            ORDER BY u.shop_name
-            """
-        )
-        return [r["provider"] for r in result]
+    from neo4j.exceptions import ServiceUnavailable
+    attempts = 0
+    while attempts < 3:
+        try:
+            with get_session() as session:
+                result = session.run(
+                    """
+                    MATCH (u:User {role: 'provider'})
+                    WHERE u.provider_status = 'approved'
+                    RETURN u { .id, .email, .contact_number, .shop_name, .shop_address, .is_available } AS provider
+                    ORDER BY u.shop_name
+                    """
+                )
+                return [r["provider"] for r in result]
+        except ServiceUnavailable:
+            attempts += 1
+            if attempts >= 3:
+                print(f"Neo4j unavailable after {attempts} attempts")
+                return []
+        except Exception as e:
+            print(f"Error fetching approved providers: {e}")
+            # Return empty list instead of 500 error
+            return []
+    return []
 
 @router.get("/providers/search")
 def search_providers(q: str = ""):

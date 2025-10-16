@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
 import { listMyBookings } from '../../api/bookings.js'
+import { checkBookingReview, getReview } from '../../api/reviews.js'
 import { formatDateTime } from '../../components/RealTimeClock.jsx'
+import ReviewForm from '../../components/ReviewForm.jsx'
 
 export default function Orders(){
   const { token } = useAuth()
@@ -10,15 +12,70 @@ export default function Orders(){
   const [orders, setOrders] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [reviewedBookings, setReviewedBookings] = useState(new Set())
+  const [reviewIdByBooking, setReviewIdByBooking] = useState({})
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [selectedBooking, setSelectedBooking] = useState(null)
+  const [existingReview, setExistingReview] = useState(null)
 
   useEffect(()=>{
     (async ()=>{
       try {
         const data = await listMyBookings(token)
         setOrders(data)
+        
+        // Check which completed bookings have reviews
+        const completedOrders = data.filter(o => o.status === 'completed')
+        const reviewChecks = await Promise.all(
+          completedOrders.map(o => checkBookingReview(token, o.id).catch(() => ({ has_review: false })))
+        )
+        const reviewed = new Set()
+        const map = {}
+        completedOrders.forEach((o, idx) => {
+          if (reviewChecks[idx]?.has_review) {
+            reviewed.add(o.id)
+            if (reviewChecks[idx]?.review_id) map[o.id] = reviewChecks[idx].review_id
+          }
+        })
+        setReviewedBookings(reviewed)
+        setReviewIdByBooking(map)
+
+        // Auto-open review modal for the first completed booking without a review
+        const firstUnreviewed = completedOrders.find(o => !reviewed.has(o.id))
+        if (firstUnreviewed) {
+          setSelectedBooking(firstUnreviewed)
+          setExistingReview(null)
+          setShowReviewForm(true)
+        }
       } catch(e){ setError(e.message) } finally { setLoading(false) }
     })()
   }, [token])
+
+  const handleReviewClick = (booking) => {
+    setSelectedBooking(booking)
+    setExistingReview(null)
+    setShowReviewForm(true)
+  }
+
+  const handleEditReviewClick = async (booking) => {
+    try {
+      const rid = reviewIdByBooking[booking.id]
+      if (!rid) return
+      const rev = await getReview(token, rid)
+      setExistingReview(rev)
+      setSelectedBooking(booking)
+      setShowReviewForm(true)
+    } catch (e) {
+      setError(e.message)
+    }
+  }
+
+  const handleReviewSuccess = () => {
+    setShowReviewForm(false)
+    setReviewedBookings(prev => new Set([...prev, selectedBooking.id]))
+    setSelectedBooking(null)
+    setExistingReview(null)
+  }
 
   if (loading) return <div>Loading...</div>
   if (error) return <div className="text-sm text-red-600">{error}</div>
@@ -100,12 +157,29 @@ export default function Orders(){
             )}
             
             {o.status === 'completed' && (
-              <button 
-                onClick={() => nav('/receipts')}
-                className="btn-primary w-full text-sm"
-              >
-                🧾 View Receipt
-              </button>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => nav('/receipts')}
+                  className="btn-white flex-1 text-sm"
+                >
+                  🧾 View Receipt
+                </button>
+                {!reviewedBookings.has(o.id) ? (
+                  <button 
+                    onClick={() => handleReviewClick(o)}
+                    className="btn-primary flex-1 text-sm"
+                  >
+                    ⭐ Leave Review
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleEditReviewClick(o)}
+                    className="btn-white flex-1 text-sm"
+                  >
+                    ✏️ Edit Review
+                  </button>
+                )}
+              </div>
             )}
             
             {o.status === 'rejected' && (
@@ -116,6 +190,19 @@ export default function Orders(){
           </div>
         ))}
       </div>
+
+      {showReviewForm && selectedBooking && (
+        <ReviewForm
+          booking={selectedBooking}
+          existingReview={existingReview}
+          onSuccess={handleReviewSuccess}
+          onCancel={() => {
+            setShowReviewForm(false)
+            setSelectedBooking(null)
+            setExistingReview(null)
+          }}
+        />
+      )}
     </div>
   )
 }

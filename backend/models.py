@@ -218,3 +218,20 @@ class ReceiptPublic(BaseModel):
     delivery_fee: float
     total: float
     created_at: datetime
+
+# Reviews
+class ReviewCreate(BaseModel):
+    provider_id: str
+    booking_id: str
+    rating: int = Field(..., ge=1, le=5)  # 1-5 stars
+    comment: Optional[str] = None
+
+class ReviewPublic(BaseModel):
+    id: str
+    provider_id: str
+    customer_id: str
+    customer_name: Optional[str] = None
+    booking_id: str
+    rating: int
+    comment: Optional[str] = None
+    created_at: datetime

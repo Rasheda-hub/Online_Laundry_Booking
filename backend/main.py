@@ -15,6 +15,7 @@ from routes.admin import router as admin_router
 from routes.bookings import router as bookings_router
 from routes.categories import router as categories_router
 from routes.places import router as places_router
+from routes.reviews import router as reviews_router
 from oauth import router as oauth_router
 from dotenv import load_dotenv
 import os
@@ -56,6 +57,7 @@ app.include_router(admin_router)
 app.include_router(categories_router)
 app.include_router(notifications_router)
 app.include_router(places_router)
+app.include_router(reviews_router)
 
 # Serve static files (React build)
 try:
@@ -115,7 +117,7 @@ async def catch_all(path_name: str, request: Request):
     # Don't catch API routes - let them return proper 404 JSON
     # Only block actual API endpoints, not frontend routes
     # API routes have specific patterns like /api_prefix/endpoint
-    api_prefixes = ("auth/", "oauth/", "users/", "services/", "orders/", "receipts/", "bookings/", "admin/", "categories/", "notifications/", "places/")
+    api_prefixes = ("auth/", "oauth/", "users/", "services/", "orders/", "receipts/", "bookings/", "admin/", "categories/", "notifications/", "places/", "reviews/")
     static_files = ("static", "assets", "logo.png", "favicon.ico", "health", "docs", "openapi.json")
     
     # Check if it's an API route (has slash after prefix) or static file

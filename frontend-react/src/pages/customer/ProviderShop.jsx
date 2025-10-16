@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext.jsx'
+import { getProviderReviews, getProviderRatingStats } from '../../api/reviews.js'
 
 export default function ProviderShop() {
   const { providerId } = useParams()
@@ -9,11 +10,14 @@ export default function ProviderShop() {
   
   const [provider, setProvider] = useState(null)
   const [categories, setCategories] = useState([])
+  const [reviews, setReviews] = useState([])
+  const [ratingStats, setRatingStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [weights, setWeights] = useState({}) // Track weight input for each category
   const [notes, setNotes] = useState({}) // Track notes for each category
   const [booking, setBooking] = useState(null) // Track which category is being booked
+  const [showAllReviews, setShowAllReviews] = useState(false)
 
   useEffect(() => {
     fetchProviderAndCategories()
@@ -40,6 +44,14 @@ export default function ProviderShop() {
       if (!categoriesRes.ok) throw new Error('Failed to fetch categories')
       const categoriesData = await categoriesRes.json()
       setCategories(categoriesData)
+      
+      // Fetch reviews and rating stats
+      const [reviewsData, statsData] = await Promise.all([
+        getProviderReviews(providerId),
+        getProviderRatingStats(providerId)
+      ])
+      setReviews(reviewsData)
+      setRatingStats(statsData)
       
     } catch (err) {
       setError(err.message)
@@ -154,7 +166,16 @@ export default function ProviderShop() {
       <div className="card mb-6 overflow-hidden">
         <div className="flex flex-col gap-3">
           <div className="flex items-start justify-between gap-2 min-w-0">
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate flex-1 min-w-0">{provider.shop_name}</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold truncate">{provider.shop_name}</h1>
+              {ratingStats && ratingStats.total_reviews > 0 && (
+                <div className="flex items-center gap-2 mt-1 text-sm text-gray-700">
+                  <span className="font-semibold text-bubble-dark">{ratingStats.average_rating}</span>
+                  <span className="text-yellow-500">{'⭐'.repeat(Math.round(ratingStats.average_rating))}</span>
+                  <span className="text-gray-500">({ratingStats.total_reviews})</span>
+                </div>
+              )}
+            </div>
             {provider.is_available ? (
               <span className="px-2 sm:px-3 py-1 bg-green-100 text-green-700 text-xs sm:text-sm font-semibold rounded-full whitespace-nowrap flex-shrink-0">
                 🟢 Open
@@ -283,6 +304,90 @@ export default function ProviderShop() {
                 </div>
               )
             })}
+          </div>
+        )}
+      </div>
+
+      {/* Reviews Section */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg sm:text-xl font-bold">⭐ Reviews & Ratings</h2>
+        </div>
+
+        {ratingStats && ratingStats.total_reviews > 0 ? (
+          <div className="space-y-4">
+            {/* Rating Summary */}
+            <div className="card">
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-bubble-dark">{ratingStats.average_rating}</div>
+                  <div className="text-yellow-500 text-2xl">
+                    {'⭐'.repeat(Math.round(ratingStats.average_rating))}
+                  </div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    {ratingStats.total_reviews} review{ratingStats.total_reviews !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                
+                <div className="flex-1 space-y-1">
+                  {[5, 4, 3, 2, 1].map(star => {
+                    const count = ratingStats.rating_distribution[star] || 0
+                    const percentage = ratingStats.total_reviews > 0 
+                      ? (count / ratingStats.total_reviews * 100).toFixed(0) 
+                      : 0
+                    return (
+                      <div key={star} className="flex items-center gap-2 text-xs">
+                        <span className="w-8">{star}⭐</span>
+                        <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-yellow-500 h-2 rounded-full transition-all"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <span className="w-8 text-gray-600">{count}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Reviews List */}
+            <div className="space-y-3">
+              {(showAllReviews ? reviews : reviews.slice(0, 3)).map(review => (
+                <div key={review.id} className="card">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <div className="font-semibold text-sm">{review.customer_name || 'Customer'}</div>
+                      <div className="text-yellow-500 text-sm">
+                        {'⭐'.repeat(review.rating)}
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {new Date(review.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  {review.comment && (
+                    <p className="text-sm text-gray-700 break-words">{review.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {reviews.length > 3 && (
+              <button
+                onClick={() => setShowAllReviews(!showAllReviews)}
+                className="btn-white w-full text-sm"
+              >
+                {showAllReviews ? 'Show Less' : `Show All ${reviews.length} Reviews`}
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="card text-center text-gray-500">
+            <div className="text-4xl mb-2">⭐</div>
+            <p>No reviews yet</p>
+            <p className="text-xs mt-1">Be the first to review this shop!</p>
           </div>
         )}
       </div>
