@@ -134,13 +134,6 @@ export default function Notifications() {
               ✔️ Mark All Read
             </button>
           )}
-          <button
-            onClick={() => load()}
-            disabled={loading}
-            className="btn-white text-xs md:text-sm"
-          >
-            {loading ? '⏳' : '🔄'} Refresh
-          </button>
         </div>
       </div>
 
