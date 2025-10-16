@@ -74,8 +74,15 @@ def startup_event():
     try:
         get_driver().verify_connectivity()
     except Exception as e:
+        # Log error but don't crash - allow health check to respond
+        print(f"Warning: Neo4j connection failed at startup: {e}")
         # Re-raise so the app fails fast with a clear log
         raise
+
+# Health check endpoint for Render
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "laundry-app"}
 
 # Serve logo and other root-level static files
 @app.get("/logo.png")
@@ -107,7 +114,7 @@ async def root():
 async def catch_all(path_name: str, request: Request):
     # Don't catch API routes - let them return proper 404 JSON
     # Check without leading slash since path_name doesn't include it
-    api_prefixes = ("auth", "oauth", "users", "services", "orders", "receipts", "bookings", "admin", "categories", "notifications", "places", "docs", "openapi.json", "static", "assets", "logo.png", "favicon.ico")
+    api_prefixes = ("auth", "oauth", "users", "services", "orders", "receipts", "bookings", "admin", "categories", "notifications", "places", "health", "docs", "openapi.json", "static", "assets", "logo.png", "favicon.ico")
     if any(path_name.startswith(prefix) or path_name == prefix for prefix in api_prefixes):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Not found")
