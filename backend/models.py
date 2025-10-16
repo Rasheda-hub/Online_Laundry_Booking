@@ -170,6 +170,10 @@ class BookingPublic(BaseModel):
     id: str
     customer_id: str
     provider_id: str
+    provider_shop_name: Optional[str] = None
+    provider_full_name: Optional[str] = None
+    provider_address: Optional[str] = None
+    provider_contact: Optional[str] = None
     category_id: str
     category_name: str
     pricing_type: CategoryPricingType

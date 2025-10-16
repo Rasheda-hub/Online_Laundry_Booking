@@ -39,7 +39,12 @@ def _booking_to_public(session, bid: str) -> dict | None:
         MATCH (b)-[:FOR_PROVIDER]->(p:User)
         MATCH (b)-[:OF_CATEGORY]->(cat:Category)
         RETURN b { .id, .schedule_at, .status, .notes, .created_at, .weight_kg, .total_price } AS b,
-               c.id AS customer_id, p.id AS provider_id,
+               c.id AS customer_id, 
+               p.id AS provider_id,
+               p.shop_name AS provider_shop_name,
+               p.full_name AS provider_full_name,
+               p.shop_address AS provider_address,
+               p.contact_number AS provider_contact,
                cat { .id, .name, .pricing_type } AS cat
         """,
         id=bid,
@@ -57,6 +62,10 @@ def _booking_to_public(session, bid: str) -> dict | None:
         "id": b.get("id"),
         "customer_id": rec["customer_id"],
         "provider_id": rec["provider_id"],
+        "provider_shop_name": rec.get("provider_shop_name"),
+        "provider_full_name": rec.get("provider_full_name"),
+        "provider_address": rec.get("provider_address"),
+        "provider_contact": rec.get("provider_contact"),
         "category_id": cat.get("id"),
         "category_name": cat.get("name"),
         "pricing_type": cat.get("pricing_type"),
