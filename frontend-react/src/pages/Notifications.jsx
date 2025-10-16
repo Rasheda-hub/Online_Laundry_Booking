@@ -10,6 +10,7 @@ export default function Notifications() {
   const [items, setItems] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   
   const getEmptyMessage = () => {
     if (user?.role === 'admin') {
@@ -21,10 +22,14 @@ export default function Notifications() {
     }
   }
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (silent = false) => {
     if (!token) return
     setError('')
-    setLoading(true)
+    if (!silent) {
+      setLoading(true)
+    } else {
+      setIsRefreshing(true)
+    }
     try {
       const res = await listMyNotifications(token)
       setItems(res)
@@ -32,12 +37,24 @@ export default function Notifications() {
       setError(e.message)
     } finally {
       setLoading(false)
+      setIsRefreshing(false)
     }
   }, [token])
 
   useEffect(() => {
     load()
   }, [load])
+
+  // Auto-refresh notifications every 10 seconds
+  useEffect(() => {
+    if (!token) return
+
+    const interval = setInterval(() => {
+      load(true) // Silent refresh - doesn't show loading spinner
+    }, 10000) // Refresh every 10 seconds
+
+    return () => clearInterval(interval)
+  }, [load, token])
 
   const unread = items.filter(n => !n.read).length
 
@@ -102,6 +119,11 @@ export default function Notifications() {
               You have <span className="font-semibold text-bubble-dark">{unread}</span> unread notification{unread !== 1 ? 's' : ''}
             </p>
           )}
+          {isRefreshing && (
+            <p className="text-xs text-gray-500 mt-1 animate-pulse">
+              🔄 Auto-refreshing...
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           {unread > 0 && (
@@ -113,7 +135,7 @@ export default function Notifications() {
             </button>
           )}
           <button
-            onClick={load}
+            onClick={() => load()}
             disabled={loading}
             className="btn-white text-xs md:text-sm"
           >
