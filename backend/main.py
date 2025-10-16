@@ -113,13 +113,17 @@ async def root():
 @app.get("/{path_name:path}")
 async def catch_all(path_name: str, request: Request):
     # Don't catch API routes - let them return proper 404 JSON
-    # Check without leading slash since path_name doesn't include it
-    api_prefixes = ("auth", "oauth", "users", "services", "orders", "receipts", "bookings", "admin", "categories", "notifications", "places", "health", "docs", "openapi.json", "static", "assets", "logo.png", "favicon.ico")
-    if any(path_name.startswith(prefix) or path_name == prefix for prefix in api_prefixes):
+    # Only block actual API endpoints, not frontend routes
+    # API routes have specific patterns like /api_prefix/endpoint
+    api_prefixes = ("auth/", "oauth/", "users/", "services/", "orders/", "receipts/", "bookings/", "admin/", "categories/", "notifications/", "places/")
+    static_files = ("static", "assets", "logo.png", "favicon.ico", "health", "docs", "openapi.json")
+    
+    # Check if it's an API route (has slash after prefix) or static file
+    if any(path_name.startswith(prefix) for prefix in api_prefixes) or any(path_name.startswith(sf) or path_name == sf for sf in static_files):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Not found")
     
-    # Serve React app for all other routes (e.g., /dashboard, /profile)
+    # Serve React app for all other routes (e.g., /receipts, /profile, /customer, etc.)
     if os.path.exists("static/index.html"):
         return FileResponse("static/index.html")
     return {"message": "API is running. Build frontend and place in static/ folder."}

@@ -49,6 +49,11 @@ export default function Orders(){
               <div className="min-w-0 flex-1">
                 <div className="font-semibold text-base sm:text-lg truncate">{o.category_name}</div>
                 <div className="text-xs text-gray-500">Order #{o.id.slice(0,8)}</div>
+                {o.provider_shop_name && (
+                  <div className="text-xs text-gray-600 mt-1">
+                    🏪 {o.provider_shop_name}
+                  </div>
+                )}
               </div>
               <div className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap flex-shrink-0 ${statusColor(o.status)}`}>
                 {formatStatus(o.status)}

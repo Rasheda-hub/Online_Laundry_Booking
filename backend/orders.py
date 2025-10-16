@@ -68,7 +68,12 @@ def _order_to_public(session, oid: str):
         MATCH (o)-[:FOR_PROVIDER]->(p:User)
         OPTIONAL MATCH (o)-[hi:HAS_ITEM]->(s:Service)
         RETURN o { .id, .status, .delivery_option, .notes, .total_cost, .created_at },
-               c.id AS customer_id, p.id AS provider_id,
+               c.id AS customer_id, 
+               p.id AS provider_id,
+               p.shop_name AS provider_shop_name,
+               p.full_name AS provider_full_name,
+               p.shop_address AS provider_address,
+               p.contact_number AS provider_contact,
                collect({service_id: s.id, weight_kg: hi.weight_kg}) AS items
         """,
         id=oid,
@@ -84,6 +89,10 @@ def _order_to_public(session, oid: str):
         "id": o.get("id"),
         "customer_id": rec["customer_id"],
         "provider_id": rec["provider_id"],
+        "provider_shop_name": rec.get("provider_shop_name"),
+        "provider_full_name": rec.get("provider_full_name"),
+        "provider_address": rec.get("provider_address"),
+        "provider_contact": rec.get("provider_contact"),
         "items": items,
         "delivery_option": o.get("delivery_option"),
         "notes": o.get("notes"),
