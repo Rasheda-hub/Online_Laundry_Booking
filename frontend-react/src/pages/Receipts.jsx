@@ -54,16 +54,13 @@ export default function Receipts(){
             <div className="flex items-start justify-between mb-3">
               <div>
                 <div className="font-semibold text-lg">🧾 Receipt #{r.id.slice(0,8)}</div>
+                <div className="text-xs text-gray-500">📦 Order #{r.order_id?.slice(0,8)}</div>
                 <div className="text-xs text-gray-500">📅 {formatDateTime(r.created_at)}</div>
               </div>
               <div className="text-right">
                 <div className="text-lg font-bold text-bubble-dark">₱{Number(r.total).toFixed(2)}</div>
                 <div className="text-xs text-gray-500">Total</div>
               </div>
-            </div>
-            
-            <div className="text-sm mb-3">
-              <span className="text-gray-600">Order:</span> <span className="font-medium">#{r.order_id?.slice(0,8)}</span>
             </div>
             
             {user?.role !== 'customer' && (
