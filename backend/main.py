@@ -77,6 +77,24 @@ def startup_event():
         # Re-raise so the app fails fast with a clear log
         raise
 
+# Serve logo and other root-level static files
+@app.get("/logo.png")
+async def serve_logo():
+    logo_path = "static/logo.png"
+    if os.path.exists(logo_path):
+        return FileResponse(logo_path, media_type="image/png")
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404, detail="Logo not found")
+
+@app.get("/favicon.ico")
+async def serve_favicon():
+    favicon_path = "static/favicon.ico"
+    if os.path.exists(favicon_path):
+        return FileResponse(favicon_path, media_type="image/x-icon")
+    # Return 404 if favicon doesn't exist (optional)
+    from fastapi import HTTPException
+    raise HTTPException(status_code=404, detail="Favicon not found")
+
 # Serve the main React page (only if static files exist)
 @app.get("/")
 async def root():
@@ -89,7 +107,7 @@ async def root():
 async def catch_all(path_name: str, request: Request):
     # Don't catch API routes - let them return proper 404 JSON
     # Check without leading slash since path_name doesn't include it
-    api_prefixes = ("auth", "oauth", "users", "services", "orders", "receipts", "bookings", "admin", "categories", "notifications", "docs", "openapi.json", "static", "assets")
+    api_prefixes = ("auth", "oauth", "users", "services", "orders", "receipts", "bookings", "admin", "categories", "notifications", "places", "docs", "openapi.json", "static", "assets", "logo.png", "favicon.ico")
     if any(path_name.startswith(prefix) or path_name == prefix for prefix in api_prefixes):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Not found")
