@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useState, useRef } from 'react'
 
 const storage = (() => {
   try {
@@ -22,6 +22,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const fetchingRef = useRef(false)
 
   // Save token in storage whenever it changes
   useEffect(() => {
@@ -38,15 +39,20 @@ export function AuthProvider({ children }) {
       if (!token) {
         setUser(null)
         setLoading(false)
+        fetchingRef.current = false
         return
       }
+
+      // Prevent duplicate requests
+      if (fetchingRef.current) {
+        return
+      }
+      fetchingRef.current = true
 
       setLoading(true)
       setError(null)
       
       try {
-        console.log('Fetching user with token:', token.substring(0, 20) + '...')
-        
         const res = await fetch("/auth/me", {
           headers: { 
             "Authorization": `Bearer ${token}`,
@@ -54,18 +60,17 @@ export function AuthProvider({ children }) {
           }
         })
         
-        console.log('Response status:', res.status)
-        console.log('Content-Type:', res.headers.get('content-type'))
-        
         // Check if response is JSON
         const contentType = res.headers.get("content-type")
         if (!contentType || !contentType.includes("application/json")) {
           const textResponse = await res.text()
-          console.error("Expected JSON but got:", contentType)
-          console.error("Response text:", textResponse.substring(0, 500))
           
           if (res.status === 401) {
-            throw new Error("Invalid or expired token")
+            console.log('Token expired or invalid, logging out')
+            setToken('')
+            setUser(null)
+            setLoading(false)
+            return
           } else if (res.status === 404) {
             throw new Error("Authentication endpoint not found")
           } else {
@@ -74,24 +79,31 @@ export function AuthProvider({ children }) {
         }
         
         if (!res.ok) {
+          if (res.status === 401) {
+            console.log('Token expired or invalid, logging out')
+            setToken('')
+            setUser(null)
+            setLoading(false)
+            return
+          }
           const errorData = await res.json()
           throw new Error(errorData.detail || `Authentication failed: ${res.status}`)
         }
         
         const userData = await res.json()
-        console.log('User data received:', userData)
         setUser(userData)
         
       } catch (err) {
         console.error("Auth error:", err)
         setError(err.message)
         // Only clear token if it's an authentication error
-        if (err.message.includes('token') || err.message.includes('401')) {
+        if (err.message.includes('token') || err.message.includes('401') || err.message.includes('Unauthorized')) {
           setToken('')
         }
         setUser(null)
       } finally {
         setLoading(false)
+        fetchingRef.current = false
       }
     }
 
