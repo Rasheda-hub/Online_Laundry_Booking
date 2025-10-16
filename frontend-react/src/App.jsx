@@ -41,12 +41,12 @@ function Layout({ children }) {
           {/* Brand */}
           {user ? (
             <div className="flex items-center gap-2 text-lg md:text-xl font-semibold select-none cursor-default">
-              <Logo size="md" />
+              <Logo size="md" className="flex-shrink-0" />
               <span className="hidden sm:inline">LaundryApp</span>
             </div>
           ) : (
             <Link to="/" className="flex items-center gap-2 text-lg md:text-xl font-semibold hover:opacity-80 transition-opacity">
-              <Logo size="md" />
+              <Logo size="md" className="flex-shrink-0" />
               <span className="hidden sm:inline">LaundryApp</span>
             </Link>
           )}
