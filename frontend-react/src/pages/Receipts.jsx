@@ -85,16 +85,8 @@ export default function Receipts(){
               </div>
               <div className="bg-gray-50 rounded-lg p-3">
                 <div className="font-medium mb-2 text-gray-700">💰 Summary</div>
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">₱{Number(r.subtotal).toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="text-gray-600">Delivery Fee</span>
-                  <span className="font-medium">₱{Number(r.delivery_fee).toFixed(2)}</span>
-                </div>
-                <div className="flex items-center justify-between font-semibold text-bubble-dark pt-2 border-t">
-                  <span>Total</span>
+                <div className="flex items-center justify-between font-semibold text-bubble-dark">
+                  <span>Total Amount</span>
                   <span>₱{Number(r.total).toFixed(2)}</span>
                 </div>
               </div>
@@ -163,10 +155,8 @@ function ReceiptModal({ user, receipt, onClose }){
               ))}
             </div>
             <div className="border rounded p-2">
-              <div className="font-medium mb-1">Totals</div>
-              <div className="flex items-center justify-between text-sm"><span className="opacity-70">Subtotal</span><span>₱{Number(receipt.subtotal).toFixed(2)}</span></div>
-              <div className="flex items-center justify-between text-sm"><span className="opacity-70">Delivery Fee</span><span>₱{Number(receipt.delivery_fee).toFixed(2)}</span></div>
-              <div className="flex items-center justify-between text-base font-semibold mt-1"><span>Total</span><span>₱{Number(receipt.total).toFixed(2)}</span></div>
+              <div className="font-medium mb-1">Total</div>
+              <div className="flex items-center justify-between text-lg font-semibold text-bubble-dark"><span>Total Amount</span><span>₱{Number(receipt.total).toFixed(2)}</span></div>
             </div>
           </div>
         </div>
