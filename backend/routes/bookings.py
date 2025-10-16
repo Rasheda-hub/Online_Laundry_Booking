@@ -162,7 +162,7 @@ def create_booking(payload: BookingCreate, current_user: UserPublic = Depends(ge
             CREATE (nc:Notification {
               id: randomUUID(), 
               type: 'booking_created', 
-              message: 'Your booking for ' + cat.name + ' has been submitted. Waiting for provider confirmation.', 
+              message: 'Your booking for ' + cat.name + ' at ' + p.shop_name + ' has been submitted. Waiting for provider confirmation.', 
               created_at: $now, 
               read: false, 
               booking_id: $bid
