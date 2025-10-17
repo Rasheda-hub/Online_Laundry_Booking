@@ -40,6 +40,8 @@ def _booking_to_public(session, bid: str) -> dict | None:
         MATCH (b)-[:OF_CATEGORY]->(cat:Category)
         RETURN b { .id, .schedule_at, .status, .notes, .created_at, .weight_kg, .total_price } AS b,
                c.id AS customer_id, 
+               c.full_name AS customer_name,
+               c.contact_number AS customer_contact,
                p.id AS provider_id,
                p.shop_name AS provider_shop_name,
                p.full_name AS provider_full_name,
@@ -61,6 +63,8 @@ def _booking_to_public(session, bid: str) -> dict | None:
     return {
         "id": b.get("id"),
         "customer_id": rec["customer_id"],
+        "customer_name": rec.get("customer_name"),
+        "customer_contact": rec.get("customer_contact"),
         "provider_id": rec["provider_id"],
         "provider_shop_name": rec.get("provider_shop_name"),
         "provider_full_name": rec.get("provider_full_name"),
@@ -190,35 +194,81 @@ def create_booking(payload: BookingCreate, current_user: UserPublic = Depends(ge
 @router.get("/mine", response_model=list[BookingPublic])
 def list_my_bookings(current_user: UserPublic = Depends(get_current_user)):
     with get_session() as session:
-        # build query per role
+        # Build query per role
         if current_user.role == UserRole.customer:
-            q = "MATCH (b:Booking)-[:BY_CUSTOMER]->(c:User {id: $id}) RETURN b.id AS id ORDER BY b.created_at DESC"
+            q = """
+            MATCH (b:Booking)-[:BY_CUSTOMER]->(c:User {id: $id})
+            MATCH (b)-[:FOR_PROVIDER]->(p:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            RETURN b { .*, category: cat { .id, .name, .pricing_type } } AS booking,
+                   p { .id, .shop_name, .full_name, .shop_address, .contact_number } AS provider
+            ORDER BY b.created_at DESC
+            """
             params = {"id": current_user.id}
         elif current_user.role == UserRole.provider:
-            q = "MATCH (b:Booking)-[:FOR_PROVIDER]->(p:User {id: $id}) RETURN b.id AS id ORDER BY b.created_at DESC"
+            q = """
+            MATCH (b:Booking)-[:FOR_PROVIDER]->(p:User {id: $id})
+            MATCH (b)-[:BY_CUSTOMER]->(c:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            RETURN b { .*, category: cat { .id, .name, .pricing_type } } AS booking,
+                   c { .id, .full_name, .contact_number } AS customer,
+                   p { .id, .shop_name, .full_name, .shop_address, .contact_number } AS provider
+            ORDER BY b.created_at DESC
+            """
             params = {"id": current_user.id}
         else:
-            # admin can see all
-            q = "MATCH (b:Booking) RETURN b.id AS id ORDER BY b.created_at DESC"
+            # Admin can see all
+            q = """
+            MATCH (b:Booking)
+            MATCH (b)-[:BY_CUSTOMER]->(c:User)
+            MATCH (b)-[:FOR_PROVIDER]->(p:User)
+            MATCH (b)-[:OF_CATEGORY]->(cat:Category)
+            RETURN b { .*, category: cat { .id, .name, .pricing_type } } AS booking,
+                   c { .id, .full_name, .contact_number } AS customer,
+                   p { .id, .shop_name, .full_name, .shop_address, .contact_number } AS provider
+            ORDER BY b.created_at DESC
+            """
             params = {}
-        # retry fetching ids
+
+        # Retry fetching data
         attempts = 0
         while True:
             try:
-                ids = [r["id"] for r in session.run(q, **params)]
-                break
+                result = session.run(q, **params)
+                out = []
+                for record in result:
+                    booking = record["booking"]
+                    data = {
+                        "id": booking.get("id"),
+                        "customer_id": record.get("customer", {}).get("id") if current_user.role != UserRole.customer else current_user.id,
+                        "provider_id": record["provider"].get("id") if current_user.role != UserRole.provider else current_user.id,
+                        "provider_shop_name": record["provider"].get("shop_name"),
+                        "provider_full_name": record["provider"].get("full_name"),
+                        "provider_address": record["provider"].get("shop_address"),
+                        "provider_contact": record["provider"].get("contact_number"),
+                        "category_id": booking.get("category", {}).get("id"),
+                        "category_name": booking.get("category", {}).get("name"),
+                        "pricing_type": booking.get("category", {}).get("pricing_type"),
+                        "weight_kg": booking.get("weight_kg"),
+                        "total_price": booking.get("total_price"),
+                        "schedule_at": booking.get("schedule_at"),
+                        "status": booking.get("status"),
+                        "notes": booking.get("notes"),
+                        "created_at": booking.get("created_at"),
+                    }
+                    
+                    # Add customer details for provider and admin views
+                    if current_user.role in [UserRole.provider, UserRole.admin]:
+                        data["customer_name"] = record.get("customer", {}).get("full_name")
+                        data["customer_contact"] = record.get("customer", {}).get("contact_number")
+                    
+                    out.append(BookingPublic(**data))
+                return out
+                
             except ServiceUnavailable:
                 attempts += 1
                 if attempts >= 2:
                     raise
-        out = []
-        for bid in ids:
-            data = _booking_to_public(session, bid)
-            if not data:
-                # skip missing/incomplete records to avoid 500s
-                continue
-            out.append(BookingPublic(**data))
-        return out
 
 
 @router.post("/{booking_id}/accept", response_model=BookingPublic)
