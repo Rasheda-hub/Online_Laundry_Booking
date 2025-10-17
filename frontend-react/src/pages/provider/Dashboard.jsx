@@ -255,7 +255,14 @@ export default function ProviderDashboard(){
                 <div className="flex items-start justify-between gap-2 min-w-0">
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-sm md:text-base truncate">{b.category_name}</div>
-                    <div className="text-xs text-gray-500">#{b.id.slice(0,8)}</div>
+                    <div className="text-xs text-gray-500">
+                      #{b.id.slice(0,8)} • {b.customer_name || 'Customer'}
+                    </div>
+                    {b.customer_contact && (
+                      <div className="text-xs text-gray-500 mt-1">
+                        📞 {b.customer_contact}
+                      </div>
+                    )}
                   </div>
                   <div className={`px-2 py-1 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap shrink-0 ${getStatusColor(b.status)}`}>
                     {getStatusLabel(b.status)}
