@@ -328,22 +328,23 @@ function ReceiptModal({ user, receipt, onClose }){
   return (
     <>
       {/* Modal Overlay - Hidden when printing */}
-      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 print:hidden">
-        <div className="bg-white w-full max-w-[700px] max-h-[90vh] flex flex-col rounded-2xl shadow-lg">
-          {/* Header */}
-          <div className="p-4 border-b flex items-center justify-between shrink-0 bg-white rounded-t-2xl">
-            <div className="flex items-center gap-2">
-              <span className="inline-flex h-10 w-10 rounded-full items-center justify-center" style={{background:'linear-gradient(135deg,#60A5FA,#A78BFA)'}}>🧺</span>
-              <div>
-                <div className="font-semibold">DAKDAK</div>
-                <div className="text-xs opacity-70">Receipt #{receipt.id.slice(0,8)}</div>
+      <div className="fixed inset-0 bg-black/40 z-50 p-4 print:hidden overflow-y-auto">
+        <div className="min-h-full flex items-center justify-center">
+          <div className="bg-white w-full max-w-[700px] flex flex-col rounded-2xl shadow-lg" style={{maxHeight: 'calc(100vh - 4rem)', height: 'auto'}}>
+            {/* Header */}
+            <div className="p-3 md:p-4 border-b flex items-center justify-between shrink-0 bg-white rounded-t-2xl">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex h-8 w-8 md:h-10 md:w-10 rounded-full items-center justify-center text-xl md:text-2xl" style={{background:'linear-gradient(135deg,#60A5FA,#A78BFA)'}}>🧺</span>
+                <div>
+                  <div className="font-semibold text-sm md:text-base">DAKDAK</div>
+                  <div className="text-xs opacity-70">Receipt #{receipt.id.slice(0,8)}</div>
+                </div>
               </div>
+              <div className="text-xs opacity-70 hidden md:block">{formatDateTime(receipt.created_at)}</div>
             </div>
-            <div className="text-xs opacity-70">{formatDateTime(receipt.created_at)}</div>
-          </div>
 
-          {/* Body Preview - Scrollable */}
-          <div className="p-6 overflow-y-auto flex-1">
+            {/* Body Preview - Scrollable */}
+            <div className="p-4 md:p-6 overflow-y-auto" style={{maxHeight: 'calc(100vh - 14rem)'}}>
             <div className="text-center mb-6">
               <h3 className="text-2xl font-bold text-gray-800">{shopLabel}</h3>
               {receipt.provider_address && <p className="text-sm text-gray-600">{receipt.provider_address}</p>}
@@ -412,10 +413,11 @@ function ReceiptModal({ user, receipt, onClose }){
             </div>
           </div>
 
-          {/* Footer - Always visible */}
-          <div className="p-4 border-t flex items-center justify-end gap-2 shrink-0 bg-white rounded-b-2xl">
-            <button onClick={onClose} className="btn-white">Close</button>
-            <button onClick={handlePrint} className="btn-primary">🖨️ Print Receipt</button>
+            {/* Footer - Always visible */}
+            <div className="p-3 md:p-4 border-t flex items-center justify-end gap-2 shrink-0 bg-white rounded-b-2xl shadow-lg">
+              <button onClick={onClose} className="btn-white text-sm">Close</button>
+              <button onClick={handlePrint} className="btn-primary text-sm">🖨️ Print</button>
+            </div>
           </div>
         </div>
       </div>
