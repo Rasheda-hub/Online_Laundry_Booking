@@ -39,14 +39,6 @@ export default function Orders(){
         })
         setReviewedBookings(reviewed)
         setReviewIdByBooking(map)
-
-        // Auto-open review modal for the first completed booking without a review
-        const firstUnreviewed = completedOrders.find(o => !reviewed.has(o.id))
-        if (firstUnreviewed) {
-          setSelectedBooking(firstUnreviewed)
-          setExistingReview(null)
-          setShowReviewForm(true)
-        }
       } catch(e){ setError(e.message) } finally { setLoading(false) }
     })()
   }, [token])
@@ -82,12 +74,7 @@ export default function Orders(){
 
   return (
     <div className="space-y-4 px-2 sm:px-0">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-0">
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">My Orders</h2>
-        <button onClick={() => nav('/receipts')} className="btn-white text-xs sm:text-sm whitespace-nowrap">
-          🧾 View Receipts
-        </button>
-      </div>
+      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">My Orders</h2>
       
       {error && <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</div>}
       
