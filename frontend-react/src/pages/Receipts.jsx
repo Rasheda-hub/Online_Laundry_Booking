@@ -114,7 +114,215 @@ function ReceiptModal({ user, receipt, onClose }){
   ), [user, receipt])
   
   const handlePrint = () => {
-    window.print()
+    // Create a new window with only the receipt content
+    const printWindow = window.open('', '_blank', 'width=800,height=600')
+    
+    const receiptHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Receipt - ${receipt.id.slice(0,8)}</title>
+          <style>
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: Arial, sans-serif;
+              padding: 20px;
+              max-width: 600px;
+              margin: 0 auto;
+            }
+            .header {
+              text-align: center;
+              margin-bottom: 30px;
+              padding-bottom: 20px;
+              border-bottom: 2px solid #333;
+            }
+            .header h1 {
+              font-size: 32px;
+              margin-bottom: 10px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+            }
+            .header p {
+              font-size: 14px;
+              color: #666;
+              margin: 5px 0;
+            }
+            .receipt-info {
+              margin-bottom: 30px;
+              font-size: 14px;
+            }
+            .receipt-info div {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 5px;
+            }
+            .receipt-info strong {
+              font-weight: 600;
+            }
+            .section {
+              margin-bottom: 30px;
+              padding-bottom: 20px;
+              border-bottom: 1px solid #ddd;
+            }
+            .section-title {
+              font-weight: 600;
+              font-size: 14px;
+              margin-bottom: 10px;
+              text-transform: uppercase;
+            }
+            .customer-info div {
+              font-size: 14px;
+              margin-bottom: 5px;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin-top: 10px;
+            }
+            th {
+              text-align: left;
+              padding: 10px 0;
+              border-bottom: 2px solid #333;
+              font-weight: 600;
+              font-size: 14px;
+            }
+            th:last-child {
+              text-align: right;
+            }
+            td {
+              padding: 10px 0;
+              border-bottom: 1px solid #ddd;
+              font-size: 14px;
+            }
+            td:last-child {
+              text-align: right;
+            }
+            .totals {
+              margin-top: 20px;
+              border-top: 2px solid #333;
+              padding-top: 20px;
+            }
+            .totals div {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 10px;
+              font-size: 14px;
+            }
+            .total-amount {
+              font-size: 20px;
+              font-weight: bold;
+              margin-top: 15px;
+              padding-top: 15px;
+              border-top: 1px solid #999;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 1px solid #ddd;
+              font-size: 12px;
+              color: #666;
+            }
+            .footer p {
+              margin: 5px 0;
+            }
+            @media print {
+              body {
+                padding: 0;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1><span>🧺</span> ${shopLabel}</h1>
+            ${receipt.provider_address ? `<p>${receipt.provider_address}</p>` : ''}
+            ${receipt.provider_contact ? `<p>Tel: ${receipt.provider_contact}</p>` : ''}
+          </div>
+
+          <div class="receipt-info">
+            <div><strong>Receipt No:</strong> <span>#${receipt.id.slice(0,8)}</span></div>
+            <div><strong>Date:</strong> <span>${formatDateTime(receipt.created_at)}</span></div>
+            ${receipt.order_id ? `<div><strong>Order No:</strong> <span>#${receipt.order_id.slice(0,8)}</span></div>` : ''}
+          </div>
+
+          <div class="section">
+            <div class="section-title">Customer Information</div>
+            <div class="customer-info">
+              <div><strong>Name:</strong> ${receipt.customer_name || 'N/A'}</div>
+              ${receipt.customer_contact ? `<div><strong>Contact:</strong> ${receipt.customer_contact}</div>` : ''}
+              ${receipt.customer_address ? `<div><strong>Address:</strong> ${receipt.customer_address}</div>` : ''}
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Items</div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Service</th>
+                  <th>Weight</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(receipt.items || []).length === 0 
+                  ? '<tr><td colspan="2" style="text-align: center; color: #999;">No items recorded</td></tr>'
+                  : (receipt.items || []).map(item => `
+                    <tr>
+                      <td>${item.service_name || `Service ${item.service_id?.slice(0,8) || '-'}`}</td>
+                      <td>${item.weight_kg ? `${item.weight_kg} kg` : '-'}</td>
+                    </tr>
+                  `).join('')
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="totals">
+            ${receipt.subtotal !== undefined ? `
+              <div>
+                <span>Subtotal:</span>
+                <span>₱${Number(receipt.subtotal).toFixed(2)}</span>
+              </div>
+            ` : ''}
+            ${receipt.delivery_fee !== undefined && receipt.delivery_fee > 0 ? `
+              <div>
+                <span>Delivery Fee:</span>
+                <span>₱${Number(receipt.delivery_fee).toFixed(2)}</span>
+              </div>
+            ` : ''}
+            <div class="total-amount">
+              <span>TOTAL AMOUNT:</span>
+              <span>₱${Number(receipt.total).toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Thank you for choosing our laundry service!</p>
+            <p>Please keep this receipt for your records.</p>
+            ${receipt.provider_contact ? `<p style="margin-top: 15px; font-weight: 600;">For inquiries, please contact us at ${receipt.provider_contact}</p>` : ''}
+          </div>
+
+          <script>
+            // Auto-print when loaded
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `
+    
+    printWindow.document.write(receiptHTML)
+    printWindow.document.close()
   }
   
   return (
