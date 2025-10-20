@@ -110,63 +110,200 @@ export default function Receipts(){
 
 function ReceiptModal({ user, receipt, onClose }){
   const shopLabel = useMemo(() => (
-    receipt?.provider_name || (user?.shop_name || 'Laundry Shop')
+    receipt?.provider_name || (user?.shop_name || 'DAKDAK')
   ), [user, receipt])
+  
+  const handlePrint = () => {
+    window.print()
+  }
+  
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center print:static print:bg-white">
-      <div className="bg-white w-[700px] max-w-[95vw] rounded-2xl shadow-lg print:shadow-none print:w-full print:rounded-none">
-        {/* Header */}
-        <div className="p-4 border-b flex items-center justify-between print:border-none">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-10 w-10 rounded-full items-center justify-center" style={{background:'linear-gradient(135deg,#60A5FA,#A78BFA)'}}>🧺</span>
-            <div>
-              <div className="font-semibold">{shopLabel}</div>
-              <div className="text-xs opacity-70">Receipt #{receipt.id.slice(0,8)}</div>
-              {(receipt.provider_address || receipt.provider_contact) && (
-                <div className="text-[11px] opacity-70">
-                  {receipt.provider_address && <div>{receipt.provider_address}</div>}
-                  {receipt.provider_contact && <div>{receipt.provider_contact}</div>}
+    <>
+      {/* Modal Overlay - Hidden when printing */}
+      <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4 print:hidden">
+        <div className="bg-white w-full max-w-[700px] max-h-[90vh] flex flex-col rounded-2xl shadow-lg">
+          {/* Header */}
+          <div className="p-4 border-b flex items-center justify-between shrink-0 bg-white rounded-t-2xl">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-10 w-10 rounded-full items-center justify-center" style={{background:'linear-gradient(135deg,#60A5FA,#A78BFA)'}}>🧺</span>
+              <div>
+                <div className="font-semibold">DAKDAK</div>
+                <div className="text-xs opacity-70">Receipt #{receipt.id.slice(0,8)}</div>
+              </div>
+            </div>
+            <div className="text-xs opacity-70">{formatDateTime(receipt.created_at)}</div>
+          </div>
+
+          {/* Body Preview - Scrollable */}
+          <div className="p-6 overflow-y-auto flex-1">
+            <div className="text-center mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">{shopLabel}</h3>
+              {receipt.provider_address && <p className="text-sm text-gray-600">{receipt.provider_address}</p>}
+              {receipt.provider_contact && <p className="text-sm text-gray-600">📞 {receipt.provider_contact}</p>}
+              <div className="mt-2 pt-2 border-t">
+                <p className="text-xs text-gray-500">Receipt #{receipt.id.slice(0,8)}</p>
+                <p className="text-xs text-gray-500">{formatDateTime(receipt.created_at)}</p>
+              </div>
+            </div>
+
+            {/* Customer Info */}
+            <div className="mb-4 pb-4 border-b">
+              <div className="text-sm font-semibold text-gray-700 mb-1">Customer Information</div>
+              <div className="text-sm text-gray-600">{receipt.customer_name || 'N/A'}</div>
+              {receipt.customer_contact && <div className="text-sm text-gray-600">📞 {receipt.customer_contact}</div>}
+              {receipt.customer_address && <div className="text-sm text-gray-600">📍 {receipt.customer_address}</div>}
+            </div>
+
+            {/* Items */}
+            <div className="mb-4">
+              <div className="text-sm font-semibold text-gray-700 mb-2">Items</div>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2">Service</th>
+                    <th className="text-right py-2">Weight</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(receipt.items || []).length === 0 && (
+                    <tr><td colSpan="2" className="text-center py-4 text-gray-500">No items recorded</td></tr>
+                  )}
+                  {(receipt.items || []).map((it, idx) => (
+                    <tr key={idx} className="border-b">
+                      <td className="py-2">{it.service_name || `Service ${it.service_id?.slice(0,8) || '-'}`}</td>
+                      <td className="text-right py-2">{it.weight_kg ? `${it.weight_kg} kg` : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Totals */}
+            <div className="border-t pt-4">
+              {receipt.subtotal !== undefined && (
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-600">Subtotal:</span>
+                  <span className="font-medium">₱{Number(receipt.subtotal).toFixed(2)}</span>
                 </div>
               )}
-            </div>
-          </div>
-          <div className="text-xs opacity-70">{formatDateTime(receipt.created_at)}</div>
-        </div>
-
-        {/* Body */}
-        <div className="p-4">
-          {user?.role !== 'customer' && (
-            <div className="mb-3 text-sm">
-              <div className="font-medium">Customer</div>
-              <div>{receipt.customer_name || receipt.customer_id}</div>
-              {receipt.customer_contact && <div className="opacity-80">{receipt.customer_contact}</div>}
-              {receipt.customer_address && <div className="opacity-70 text-xs">{receipt.customer_address}</div>}
-            </div>
-          )}
-          <div className="grid md:grid-cols-2 gap-3 text-sm">
-            <div className="border rounded p-2">
-              <div className="font-medium mb-1">Items</div>
-              {(receipt.items || []).length === 0 && <div className="opacity-60 text-xs">No items recorded</div>}
-              {(receipt.items || []).map((it, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs">
-                  <div>{it.service_name || `Service ${it.service_id?.slice(0,8) || '-'}`}</div>
-                  <div>{it.weight_kg ? `${it.weight_kg} kg` : ''}</div>
+              {receipt.delivery_fee !== undefined && receipt.delivery_fee > 0 && (
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-600">Delivery Fee:</span>
+                  <span className="font-medium">₱{Number(receipt.delivery_fee).toFixed(2)}</span>
                 </div>
-              ))}
+              )}
+              <div className="flex justify-between text-lg font-bold mt-2 pt-2 border-t">
+                <span>Total Amount:</span>
+                <span className="text-bubble-dark">₱{Number(receipt.total).toFixed(2)}</span>
+              </div>
             </div>
-            <div className="border rounded p-2">
-              <div className="font-medium mb-1">Total</div>
-              <div className="flex items-center justify-between text-lg font-semibold text-bubble-dark"><span>Total Amount</span><span>₱{Number(receipt.total).toFixed(2)}</span></div>
+
+            <div className="mt-6 pt-4 border-t text-center text-xs text-gray-500">
+              <p>Thank you for choosing our laundry service!</p>
+              <p className="mt-1">Please keep this receipt for your records.</p>
             </div>
           </div>
-        </div>
 
-        {/* Footer (hidden in print) */}
-        <div className="p-4 border-t flex items-center justify-end gap-2 print:hidden">
-          <button onClick={onClose} className="btn-white">Close</button>
-          <button onClick={()=>window.print()} className="btn-primary">Print</button>
+          {/* Footer - Always visible */}
+          <div className="p-4 border-t flex items-center justify-end gap-2 shrink-0 bg-white rounded-b-2xl">
+            <button onClick={onClose} className="btn-white">Close</button>
+            <button onClick={handlePrint} className="btn-primary">🖨️ Print Receipt</button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Print-only content */}
+      <div className="hidden print:block print-receipt p-8">
+        <div className="max-w-[600px] mx-auto">
+          {/* Header */}
+          <div className="text-center mb-6 pb-4 border-b-2 border-gray-800">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="text-3xl">🧺</span>
+              <h1 className="text-3xl font-bold text-gray-800">{shopLabel}</h1>
+            </div>
+            {receipt.provider_address && <p className="text-sm text-gray-700">{receipt.provider_address}</p>}
+            {receipt.provider_contact && <p className="text-sm text-gray-700">Tel: {receipt.provider_contact}</p>}
+          </div>
+
+          {/* Receipt Info */}
+          <div className="mb-6 text-sm">
+            <div className="flex justify-between mb-1">
+              <span className="font-semibold">Receipt No:</span>
+              <span>#{receipt.id.slice(0,8)}</span>
+            </div>
+            <div className="flex justify-between mb-1">
+              <span className="font-semibold">Date:</span>
+              <span>{formatDateTime(receipt.created_at)}</span>
+            </div>
+            {receipt.order_id && (
+              <div className="flex justify-between">
+                <span className="font-semibold">Order No:</span>
+                <span>#{receipt.order_id.slice(0,8)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Customer Info */}
+          <div className="mb-6 pb-4 border-b border-gray-300">
+            <div className="font-semibold text-sm mb-2">CUSTOMER INFORMATION</div>
+            <div className="text-sm">
+              <div><strong>Name:</strong> {receipt.customer_name || 'N/A'}</div>
+              {receipt.customer_contact && <div><strong>Contact:</strong> {receipt.customer_contact}</div>}
+              {receipt.customer_address && <div><strong>Address:</strong> {receipt.customer_address}</div>}
+            </div>
+          </div>
+
+          {/* Items Table */}
+          <div className="mb-6">
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr className="border-b-2 border-gray-800">
+                  <th className="text-left py-2 font-semibold">SERVICE</th>
+                  <th className="text-right py-2 font-semibold">WEIGHT</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(receipt.items || []).length === 0 && (
+                  <tr><td colSpan="2" className="text-center py-4 text-gray-500">No items recorded</td></tr>
+                )}
+                {(receipt.items || []).map((it, idx) => (
+                  <tr key={idx} className="border-b border-gray-300">
+                    <td className="py-2">{it.service_name || `Service ${it.service_id?.slice(0,8) || '-'}`}</td>
+                    <td className="text-right py-2">{it.weight_kg ? `${it.weight_kg} kg` : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals */}
+          <div className="mb-6 border-t-2 border-gray-800 pt-4">
+            {receipt.subtotal !== undefined && (
+              <div className="flex justify-between text-sm mb-2">
+                <span>Subtotal:</span>
+                <span>₱{Number(receipt.subtotal).toFixed(2)}</span>
+              </div>
+            )}
+            {receipt.delivery_fee !== undefined && receipt.delivery_fee > 0 && (
+              <div className="flex justify-between text-sm mb-2">
+                <span>Delivery Fee:</span>
+                <span>₱{Number(receipt.delivery_fee).toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-xl font-bold mt-3 pt-3 border-t border-gray-400">
+              <span>TOTAL AMOUNT:</span>
+              <span>₱{Number(receipt.total).toFixed(2)}</span>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center text-xs text-gray-600 border-t border-gray-300 pt-4">
+            <p className="mb-1">Thank you for choosing our laundry service!</p>
+            <p className="mb-1">Please keep this receipt for your records.</p>
+            <p className="mt-3 font-semibold">For inquiries, please contact us at {receipt.provider_contact || 'our shop'}</p>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }

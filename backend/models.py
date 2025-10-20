@@ -169,6 +169,8 @@ class BookingUpdateDetails(BaseModel):
 class BookingPublic(BaseModel):
     id: str
     customer_id: str
+    customer_name: Optional[str] = None
+    customer_contact: Optional[str] = None
     provider_id: str
     provider_shop_name: Optional[str] = None
     provider_full_name: Optional[str] = None

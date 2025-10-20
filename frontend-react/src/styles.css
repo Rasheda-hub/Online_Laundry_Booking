@@ -78,3 +78,35 @@
     @apply bg-gray-300 rounded hover:bg-gray-400;
   }
 }
+
+/* Print styles - only show receipt content */
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Show only the print receipt content */
+  .print-receipt,
+  .print-receipt * {
+    visibility: visible;
+  }
+  
+  /* Position the receipt at the top of the page */
+  .print-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  
+  /* Remove backgrounds and shadows for print */
+  body {
+    background: white !important;
+  }
+  
+  /* Ensure proper page breaks */
+  .print-receipt {
+    page-break-after: avoid;
+  }
+}
