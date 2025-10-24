@@ -21,7 +21,20 @@ export default function Login(){
       setToken(tok.access_token)
       setUser(null) // AuthProvider will fetch /auth/me and update user
     } catch (err){
-      setError(err.message)
+      const errorMsg = err.message
+      // Check if it's an email verification error
+      if (errorMsg.includes('verify your email')) {
+        setError(
+          <span>
+            {errorMsg}.{' '}
+            <Link to="/verify-email-notice" state={{ email }} className="underline font-semibold">
+              Resend verification email
+            </Link>
+          </span>
+        )
+      } else {
+        setError(errorMsg)
+      }
     } finally { setLoading(false) }
   }
 

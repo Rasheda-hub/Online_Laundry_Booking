@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom'
 import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
+import VerifyEmailNotice from './pages/VerifyEmailNotice.jsx'
+import VerifyEmail from './pages/VerifyEmail.jsx'
 import OAuthCallback from './pages/OAuthCallback.jsx'
 import CustomerDashboard from './pages/customer/Dashboard.jsx'
 import ProviderShop from './pages/customer/ProviderShop.jsx'
@@ -29,7 +31,7 @@ function ProtectedRoute({ children, allow }) {
 function Layout({ children }) {
   const { user } = useAuth()
   const { pathname } = useLocation()
-  const isAuthPage = pathname === '/login' || pathname === '/register'
+  const isAuthPage = pathname === '/login' || pathname === '/register' || pathname === '/verify-email-notice' || pathname === '/verify-email'
   
   return (
     <div className="min-h-screen bg-gradient-bubble relative font-rounded text-slate-800">
@@ -79,6 +81,8 @@ export default function App() {
         <Route path="/" element={<Layout><Home /></Layout>} />
         <Route path="/login" element={<Layout><Login /></Layout>} />
         <Route path="/register" element={<Layout><Register /></Layout>} />
+        <Route path="/verify-email-notice" element={<Layout><VerifyEmailNotice /></Layout>} />
+        <Route path="/verify-email" element={<Layout><VerifyEmail /></Layout>} />
         <Route path="/oauth/callback" element={<Layout><OAuthCallback /></Layout>} />
         {/* Customer */}
         <Route path="/customer" element={<Layout><ProtectedRoute allow={["customer","admin"]}><CustomerDashboard /></ProtectedRoute></Layout>} />

@@ -41,5 +41,13 @@ class Settings(BaseModel):
     # URLs for OAuth redirects
     backend_url: str = os.getenv("BACKEND_URL", "http://localhost:8000")
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:5173")
+    
+    # Email Settings for verification
+    mail_username: str = os.getenv("MAIL_USERNAME", "")
+    mail_password: str = os.getenv("MAIL_PASSWORD", "")
+    mail_from: str = os.getenv("MAIL_FROM", "noreply@laundryapp.com")
+    mail_port: int = int(os.getenv("MAIL_PORT", "587"))
+    mail_server: str = os.getenv("MAIL_SERVER", "smtp.gmail.com")
+    mail_from_name: str = os.getenv("MAIL_FROM_NAME", "LaundryApp")
 
 settings = Settings()

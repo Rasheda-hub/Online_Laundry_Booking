@@ -40,6 +40,7 @@ class UserPublic(BaseModel):
     provider_status: Optional[ProviderStatus] = None
     banned: Optional[bool] = None
     is_available: Optional[bool] = None  # For providers to mark shop open/closed
+    email_verified: Optional[bool] = None  # Email verification status
 
 class Token(BaseModel):
     access_token: str

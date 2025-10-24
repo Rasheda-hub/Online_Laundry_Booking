@@ -2,12 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from models import CustomerCreate, ProviderCreate, UserPublic, UserRole, ProviderStatus, ChangePasswordRequest
 from db import get_session
 from auth import get_password_hash, get_current_user, verify_password
+from email_utils import send_verification_email, create_verification_token, verify_verification_token
 import uuid
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-@router.post("/register/customer", response_model=UserPublic)
-def register_customer(payload: CustomerCreate):
+@router.post("/register/customer")
+async def register_customer(payload: CustomerCreate):
     with get_session() as session:
         exists = session.run("MATCH (u:User {email: $email}) RETURN u", email=payload.email).single()
         if exists:
@@ -18,7 +19,7 @@ def register_customer(payload: CustomerCreate):
             CREATE (u:User {
                 id: $id, role: $role, email: $email, contact_number: $contact_number,
                 full_name: $full_name, address: $address, hashed_password: $hashed_password,
-                banned: false
+                banned: false, email_verified: false
             })
             RETURN u
             """,
@@ -30,17 +31,18 @@ def register_customer(payload: CustomerCreate):
             address=payload.address,
             hashed_password=get_password_hash(payload.password),
         )
-        return UserPublic(
-            id=user_id,
-            role=UserRole.customer,
-            email=payload.email,
-            contact_number=payload.contact_number,
-            full_name=payload.full_name,
-            address=payload.address,
-        )
+        
+        # Send verification email
+        token = create_verification_token(payload.email)
+        await send_verification_email(payload.email, token)
+        
+        return {
+            "message": "Registration successful! Please check your email to verify your account.",
+            "email": payload.email
+        }
 
-@router.post("/register/provider", response_model=UserPublic)
-def register_provider(payload: ProviderCreate):
+@router.post("/register/provider")
+async def register_provider(payload: ProviderCreate):
     with get_session() as session:
         exists = session.run("MATCH (u:User {email: $email}) RETURN u", email=payload.email).single()
         if exists:
@@ -51,7 +53,7 @@ def register_provider(payload: ProviderCreate):
             CREATE (u:User {
                 id: $id, role: $role, email: $email, contact_number: $contact_number,
                 shop_name: $shop_name, shop_address: $shop_address, hashed_password: $hashed_password,
-                provider_status: 'pending', banned: false, is_available: true
+                provider_status: 'pending', banned: false, is_available: true, email_verified: false
             })
             RETURN u
             """,
@@ -63,15 +65,15 @@ def register_provider(payload: ProviderCreate):
             shop_address=payload.shop_address,
             hashed_password=get_password_hash(payload.password),
         )
-        return UserPublic(
-            id=user_id,
-            role=UserRole.provider,
-            email=payload.email,
-            contact_number=payload.contact_number,
-            shop_name=payload.shop_name,
-            shop_address=payload.shop_address,
-            provider_status=ProviderStatus.pending,
-        )
+        
+        # Send verification email
+        token = create_verification_token(payload.email)
+        await send_verification_email(payload.email, token)
+        
+        return {
+            "message": "Registration successful! Please check your email to verify your account.",
+            "email": payload.email
+        }
 
 @router.get("/me", response_model=UserPublic)
 def get_profile(current_user: UserPublic = Depends(get_current_user)):
@@ -215,3 +217,45 @@ def toggle_availability(current_user: UserPublic = Depends(get_current_user)):
             id=current_user.id
         ).single()
         return {"is_available": rec["is_available"] if rec else True}
+
+@router.get("/verify-email")
+def verify_email(token: str):
+    """Verify user email with token"""
+    email = verify_verification_token(token)
+    if not email:
+        raise HTTPException(status_code=400, detail="Invalid or expired verification token")
+    
+    with get_session() as session:
+        # Check if user exists
+        user = session.run("MATCH (u:User {email: $email}) RETURN u", email=email).single()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Update email_verified status
+        session.run(
+            "MATCH (u:User {email: $email}) SET u.email_verified = true",
+            email=email
+        )
+    
+    return {"message": "Email verified successfully! You can now log in."}
+
+@router.post("/resend-verification")
+async def resend_verification(email: str):
+    """Resend verification email"""
+    with get_session() as session:
+        result = session.run(
+            "MATCH (u:User {email: $email}) RETURN u.email_verified AS verified",
+            email=email
+        ).single()
+        
+        if not result:
+            raise HTTPException(status_code=404, detail="Email not found")
+        
+        if result["verified"]:
+            raise HTTPException(status_code=400, detail="Email already verified")
+    
+    # Send new verification email
+    token = create_verification_token(email)
+    await send_verification_email(email, token)
+    
+    return {"message": "Verification email sent! Please check your inbox."}

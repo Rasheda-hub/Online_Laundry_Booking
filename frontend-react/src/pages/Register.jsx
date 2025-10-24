@@ -31,7 +31,6 @@ export default function Register(){
     setError(''); setLoading(true)
     try {
       const email = tab === 'customer' ? cEmail : pEmail
-      const password = tab === 'customer' ? cPassword : pPassword
       
       if (tab === 'customer'){
         await registerCustomer({
@@ -51,15 +50,8 @@ export default function Register(){
         })
       }
       
-      // Auto-login after successful registration
-      await login({ email, password })
-      
-      // Navigate to appropriate dashboard
-      if (tab === 'customer') {
-        nav('/customer')
-      } else {
-        nav('/provider')
-      }
+      // Show success message and redirect to verification notice
+      nav('/verify-email-notice', { state: { email } })
     } catch (err){
       setError(err.message)
     } finally { setLoading(false) }

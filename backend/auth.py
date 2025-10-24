@@ -42,7 +42,7 @@ def get_user_by_email(email: str) -> Optional[UserPublic]:
                     MATCH (u:User {email: $email})
                     RETURN u { .id, .role, .email, .contact_number,
                                .full_name, .address, .shop_name, .shop_address,
-                               .provider_status, .banned,
+                               .provider_status, .banned, .email_verified,
                                hashed_password: u.hashed_password } AS user
                     """,
                     email=email,
@@ -118,6 +118,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends()):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     if getattr(user, "banned", False):
         raise HTTPException(status_code=403, detail="User is banned")
+    if not getattr(user, "email_verified", False):
+        raise HTTPException(status_code=403, detail="Please verify your email before logging in")
 
     # fetch hashed password separately
     with get_session() as session:
@@ -146,6 +148,8 @@ def login_json(payload: LoginRequest):
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     if getattr(user, "banned", False):
         raise HTTPException(status_code=403, detail="User is banned")
+    if not getattr(user, "email_verified", False):
+        raise HTTPException(status_code=403, detail="Please verify your email before logging in")
     with get_session() as session:
         hp = session.run("MATCH (u:User {id: $id}) RETURN u.hashed_password AS hp", id=user.id).single()
         hashed_password = hp["hp"] if hp else None

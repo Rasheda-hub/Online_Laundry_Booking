@@ -62,6 +62,7 @@ def get_or_create_oauth_user(email: str, full_name: str, provider: str, provider
                 full_name: $full_name,
                 address: 'Not provided',
                 banned: false,
+                email_verified: true,
                 oauth_provider: $provider,
                 oauth_id: $provider_id
             })
