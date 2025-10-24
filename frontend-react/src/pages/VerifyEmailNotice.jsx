@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
-import api from '../api/axios'
+import { apiFetch } from '../api/client'
 
 export default function VerifyEmailNotice() {
   const location = useLocation()
@@ -15,10 +15,10 @@ export default function VerifyEmailNotice() {
     setMessage('')
     setError('')
     try {
-      await api.post('/users/resend-verification', null, { params: { email } })
+      await apiFetch(`/users/resend-verification?email=${encodeURIComponent(email)}`, { method: 'POST' })
       setMessage('Verification email sent! Please check your inbox.')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Failed to resend email')
+      setError(err.message || 'Failed to resend email')
     } finally {
       setResending(false)
     }

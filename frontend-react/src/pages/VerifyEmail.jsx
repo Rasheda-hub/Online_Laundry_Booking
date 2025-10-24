@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
-import api from '../api/axios'
+import { apiFetch } from '../api/client'
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams()
@@ -19,9 +19,9 @@ export default function VerifyEmail() {
 
     async function verifyEmail() {
       try {
-        const response = await api.get(`/users/verify-email?token=${token}`)
+        const response = await apiFetch(`/users/verify-email?token=${token}`)
         setStatus('success')
-        setMessage(response.data.message || 'Email verified successfully!')
+        setMessage(response.message || 'Email verified successfully!')
         
         // Redirect to login after 3 seconds
         setTimeout(() => {
@@ -29,7 +29,7 @@ export default function VerifyEmail() {
         }, 3000)
       } catch (err) {
         setStatus('error')
-        setMessage(err.response?.data?.detail || 'Verification failed. The link may be invalid or expired.')
+        setMessage(err.message || 'Verification failed. The link may be invalid or expired.')
       }
     }
 
